@@ -10,10 +10,11 @@ import {
   Building2,
   Menu,
   X,
-  UserCheck
+  UserCheck,
+  Trash2
 } from 'lucide-react';
 import { NotificationItem, CompanySettings } from '@/types';
-import { seedInitialData } from '@/lib/services/firestore';
+import { seedInitialData, clearDatabaseToZero } from '@/lib/services/firestore';
 
 interface HeaderProps {
   currentModule: string;
@@ -37,6 +38,7 @@ export default function Header({
   setIsMobileOpen
 }: HeaderProps) {
   const [seeding, setSeeding] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>('');
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -69,6 +71,20 @@ export default function Header({
         alert('Seeding error: ' + err.message);
       } finally {
         setSeeding(false);
+      }
+    }
+  };
+
+  const handleClearData = async () => {
+    if (confirm('Clear ALL Firestore collections to ZERO for production setup?')) {
+      setClearing(true);
+      try {
+        await clearDatabaseToZero();
+        alert('Database cleared to ZERO successfully!');
+      } catch (err: any) {
+        alert('Clear database error: ' + err.message);
+      } finally {
+        setClearing(false);
       }
     }
   };
@@ -113,24 +129,23 @@ export default function Header({
 
       {/* Right Actions */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Setup Wizard Launcher */}
-        {onOpenWizard && (
-          <button
-            id="btn-open-wizard"
-            onClick={onOpenWizard}
-            title="Launch Company Setup Wizard"
-            className="flex items-center gap-1.5 text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded-lg transition-all"
-          >
-            <Building2 className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden md:inline">Setup Wizard</span>
-          </button>
-        )}
+        {/* Clear DB Button */}
+        <button
+          id="btn-clear-db-header"
+          onClick={handleClearData}
+          disabled={clearing || seeding}
+          title="Clear all database collections to ZERO for production slate"
+          className="hidden lg:flex items-center gap-1.5 text-xs font-medium bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 px-3 py-1.5 rounded-lg transition-colors"
+        >
+          <Trash2 className={`w-3.5 h-3.5 ${clearing ? 'animate-spin text-rose-400' : 'text-rose-400'}`} />
+          {clearing ? 'Clearing...' : 'Clear DB'}
+        </button>
 
         {/* Seed Data Button */}
         <button
           id="btn-seed-data"
           onClick={handleSeedData}
-          disabled={seeding}
+          disabled={seeding || clearing}
           title="Populate demo data into Firestore"
           className="hidden xl:flex items-center gap-1.5 text-xs font-medium bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 px-3 py-1.5 rounded-lg transition-colors"
         >

@@ -491,6 +491,41 @@ export async function seedInitialData() {
   }
 }
 
+// Clear Database to ZERO (Production Clean Slate)
+export async function clearDatabaseToZero() {
+  try {
+    const collectionsToClear = [
+      'employees',
+      'clients',
+      'projects',
+      'tasks',
+      'performance',
+      'attendance',
+      'meetings',
+      'documents',
+      'notifications',
+      'reports',
+      'companies',
+      'users',
+      'departments',
+      'onboarding_progress'
+    ];
+
+    for (const colName of collectionsToClear) {
+      const colRef = collection(db, colName);
+      const snapshot = await getDocs(colRef);
+      const deletePromises = snapshot.docs.map((docSnap) => deleteDoc(doc(db, colName, docSnap.id)));
+      await Promise.all(deletePromises);
+    }
+
+    console.log('Firestore database cleared to ZERO successfully!');
+    return true;
+  } catch (error) {
+    console.error('Error clearing database to zero:', error);
+    throw error;
+  }
+}
+
 // Generic collection listener
 export function subscribeCollection<T>(collectionName: string, callback: (data: T[]) => void) {
   const colRef = collection(db, collectionName);

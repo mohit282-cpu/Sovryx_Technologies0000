@@ -283,13 +283,13 @@ export default function EmployeeView({ employees, onRefresh }: EmployeeViewProps
 
             {/* Skills Badges */}
             <div className="flex flex-wrap gap-1">
-              {emp.skills.slice(0, 3).map((sk, idx) => (
+              {(emp.skills || []).slice(0, 3).map((sk, idx) => (
                 <span key={idx} className="text-[10px] bg-slate-950 text-slate-300 border border-slate-800 px-2 py-0.5 rounded-md">
                   {sk}
                 </span>
               ))}
-              {emp.skills.length > 3 && (
-                <span className="text-[10px] text-slate-500 py-0.5">+{emp.skills.length - 3} more</span>
+              {(emp.skills || []).length > 3 && (
+                <span className="text-[10px] text-slate-500 py-0.5">+{(emp.skills || []).length - 3} more</span>
               )}
             </div>
 
@@ -297,11 +297,11 @@ export default function EmployeeView({ employees, onRefresh }: EmployeeViewProps
             <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
               <div className="flex items-center gap-1">
                 <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-                <span>${emp.salary.toLocaleString()}/yr</span>
+                <span>${emp.salary?.toLocaleString() || '0'}/yr</span>
               </div>
-              {emp.warnings.length > 0 && (
+              {(emp.warnings || []).length > 0 && (
                 <span className="text-rose-400 font-medium text-[10px] flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" /> {emp.warnings.length} Warning
+                  <AlertTriangle className="w-3 h-3" /> {(emp.warnings || []).length} Warning
                 </span>
               )}
             </div>
@@ -343,7 +343,7 @@ export default function EmployeeView({ employees, onRefresh }: EmployeeViewProps
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
                   <span className="text-slate-400 block text-[10px]">Annual Salary</span>
-                  <span className="text-sm font-bold text-white">${selectedEmp.salary.toLocaleString()}</span>
+                  <span className="text-sm font-bold text-white">${selectedEmp.salary?.toLocaleString() || '0'}</span>
                 </div>
                 <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
                   <span className="text-slate-400 block text-[10px]">Performance</span>

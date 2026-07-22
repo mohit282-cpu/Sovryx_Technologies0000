@@ -283,8 +283,8 @@ export default function ProjectManager({
                             alt={emp.name}
                             className="w-4 h-4 rounded-full object-cover shrink-0"
                           />
-                          <span className="font-medium text-slate-200">{emp.name.split(' ')[0]}</span>
-                          <span className="text-[9px] text-slate-500">({emp.department.slice(0, 3)})</span>
+                          <span className="font-medium text-slate-200">{(emp.name || 'Member').split(' ')[0]}</span>
+                          <span className="text-[9px] text-slate-500">({(emp.department || 'GEN').slice(0, 3)})</span>
                         </div>
                       ))
                     )}

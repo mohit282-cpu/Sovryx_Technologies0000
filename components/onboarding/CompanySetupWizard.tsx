@@ -249,25 +249,28 @@ export default function CompanySetupWizard({
 
   // Load saved draft on mount
   useEffect(() => {
-    try {
-      const savedDraft = localStorage.getItem('sovryx_company_setup_draft');
-      if (savedDraft) {
-        const parsed = JSON.parse(savedDraft);
-        if (parsed.step) setStep(parsed.step);
-        if (parsed.companyInfo) setCompanyInfo(parsed.companyInfo);
-        if (parsed.ceoInfo) setCeoInfo(parsed.ceoInfo);
-        if (parsed.companySettings) setCompanySettings(parsed.companySettings);
-        if (parsed.departments) setDepartments(parsed.departments);
-        if (parsed.employees) setEmployees(parsed.employees);
-        if (parsed.clients) setClients(parsed.clients);
-        if (parsed.projects) setProjects(parsed.projects);
-        if (parsed.perfWeights) setPerfWeights(parsed.perfWeights);
-        if (parsed.notificationSettings) setNotificationSettings(parsed.notificationSettings);
-        if (parsed.aiSettings) setAiSettings(parsed.aiSettings);
+    const timer = setTimeout(() => {
+      try {
+        const savedDraft = localStorage.getItem('sovryx_company_setup_draft');
+        if (savedDraft) {
+          const parsed = JSON.parse(savedDraft);
+          if (parsed.step) setStep(parsed.step);
+          if (parsed.companyInfo) setCompanyInfo(parsed.companyInfo);
+          if (parsed.ceoInfo) setCeoInfo(parsed.ceoInfo);
+          if (parsed.companySettings) setCompanySettings(parsed.companySettings);
+          if (parsed.departments) setDepartments(parsed.departments);
+          if (parsed.employees) setEmployees(parsed.employees);
+          if (parsed.clients) setClients(parsed.clients);
+          if (parsed.projects) setProjects(parsed.projects);
+          if (parsed.perfWeights) setPerfWeights(parsed.perfWeights);
+          if (parsed.notificationSettings) setNotificationSettings(parsed.notificationSettings);
+          if (parsed.aiSettings) setAiSettings(parsed.aiSettings);
+        }
+      } catch (e) {
+        console.warn('Could not load onboarding draft from localStorage:', e);
       }
-    } catch (e) {
-      console.warn('Could not load onboarding draft from localStorage:', e);
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Auto-save progress step transition

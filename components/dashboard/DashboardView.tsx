@@ -389,7 +389,7 @@ export default function DashboardView({
           </div>
 
           <div className="space-y-2">
-            {notifications.slice(0, 4).map((n) => (
+            {(notifications || []).slice(0, 4).map((n) => (
               <div
                 key={n.id}
                 className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 flex items-start gap-3"

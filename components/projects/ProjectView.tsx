@@ -280,7 +280,7 @@ export default function ProjectView({ projects, employees, tasks, onRefresh }: P
               {/* Footer Team & Task Count */}
               <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
                 <div className="flex -space-x-2">
-                  {assignedEmps.slice(0, 3).map(e => (
+                  {(assignedEmps || []).slice(0, 3).map(e => (
                     <img
                       key={e.id}
                       src={e.photo || 'https://picsum.photos/seed/avatar/200/200'}
@@ -289,9 +289,9 @@ export default function ProjectView({ projects, employees, tasks, onRefresh }: P
                       className="w-6 h-6 rounded-full border-2 border-slate-900 object-cover"
                     />
                   ))}
-                  {assignedEmps.length > 3 && (
+                  {(assignedEmps || []).length > 3 && (
                     <div className="w-6 h-6 rounded-full bg-slate-800 border-2 border-slate-900 text-[10px] flex items-center justify-center font-bold text-slate-300">
-                      +{assignedEmps.length - 3}
+                      +{(assignedEmps || []).length - 3}
                     </div>
                   )}
                 </div>
