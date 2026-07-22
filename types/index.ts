@@ -16,6 +16,7 @@ export interface Employee {
   performanceScore: number; // 0 - 100
   attendanceScore: number; // 0 - 100
   warnings: { id: string; date: string; reason: string; issuedBy: string }[];
+  commendations?: { id: string; date: string; reason: string; awardedBy: string }[];
   documents: { id: string; name: string; url: string; date: string }[];
   notes: { id: string; date: string; text: string; author: string }[];
   biography?: string;

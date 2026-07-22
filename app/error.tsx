@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
-export default function ErrorPage({
+export default function GlobalErrorPage({
   error,
   reset,
 }: {
@@ -11,7 +11,7 @@ export default function ErrorPage({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('Next.js App Router Error:', error);
+    console.error('App Router Boundary Error:', error);
   }, [error]);
 
   return (
@@ -23,7 +23,7 @@ export default function ErrorPage({
         <div className="space-y-1">
           <h2 className="text-lg font-bold text-slate-100">Something went wrong</h2>
           <p className="text-xs text-slate-400">
-            An unexpected error occurred while loading this page.
+            An unexpected runtime error occurred while rendering the page.
           </p>
         </div>
         {error?.message && (

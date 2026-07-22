@@ -145,6 +145,20 @@ export default function EmployeeView({ employees, onRefresh }: EmployeeViewProps
     }
   };
 
+  const handleAdjustScore = async (delta: number) => {
+    if (!selectedEmp) return;
+    try {
+      const newScore = Math.max(0, Math.min(100, selectedEmp.performanceScore + delta));
+      await updateItem('employees', selectedEmp.id, {
+        performanceScore: newScore
+      });
+      setSelectedEmp(prev => prev ? { ...prev, performanceScore: newScore } : null);
+      alert(`Performance score adjusted by ${delta > 0 ? `+${delta}` : delta} (New Score: ${newScore}/100)`);
+    } catch (err: any) {
+      alert('Error updating score: ' + err.message);
+    }
+  };
+
   const handleAddNote = async () => {
     if (!selectedEmp || !noteText.trim()) return;
     try {
@@ -497,6 +511,51 @@ export default function EmployeeView({ employees, onRefresh }: EmployeeViewProps
                       ))}
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* CEO Direct Score Adjuster Card */}
+              <div className="p-4 bg-slate-900/80 rounded-xl border border-indigo-500/30 space-y-3">
+                <h4 className="font-bold text-indigo-300 flex items-center gap-1.5 text-xs uppercase tracking-wider">
+                  <TrendingUp className="w-4 h-4 text-indigo-400" /> CEO Performance Score Adjuster (Current: {selectedEmp.performanceScore}/100)
+                </h4>
+                <div className="grid grid-cols-6 gap-2">
+                  <button
+                    onClick={() => handleAdjustScore(-10)}
+                    className="py-1.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800 rounded-lg font-bold text-xs transition-colors"
+                  >
+                    -10
+                  </button>
+                  <button
+                    onClick={() => handleAdjustScore(-5)}
+                    className="py-1.5 bg-rose-950/40 hover:bg-rose-900 text-rose-300 border border-rose-800/60 rounded-lg font-bold text-xs transition-colors"
+                  >
+                    -5
+                  </button>
+                  <button
+                    onClick={() => handleAdjustScore(-1)}
+                    className="py-1.5 bg-rose-950/20 hover:bg-rose-900 text-rose-300 border border-rose-800/40 rounded-lg font-bold text-xs transition-colors"
+                  >
+                    -1
+                  </button>
+                  <button
+                    onClick={() => handleAdjustScore(1)}
+                    className="py-1.5 bg-emerald-950/20 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/40 rounded-lg font-bold text-xs transition-colors"
+                  >
+                    +1
+                  </button>
+                  <button
+                    onClick={() => handleAdjustScore(5)}
+                    className="py-1.5 bg-emerald-950/40 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/60 rounded-lg font-bold text-xs transition-colors"
+                  >
+                    +5
+                  </button>
+                  <button
+                    onClick={() => handleAdjustScore(10)}
+                    className="py-1.5 bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border border-emerald-800 rounded-lg font-bold text-xs transition-colors"
+                  >
+                    +10
+                  </button>
                 </div>
               </div>
             </div>
