@@ -53,6 +53,7 @@ import {
   CompanyHealthData
 } from '@/types';
 import { createItem } from '@/lib/services/firestore';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface CEOCommandCenterProps {
   employees: Employee[];
@@ -401,7 +402,7 @@ export default function CEOCommandCenter({
             </button>
           </div>
 
-          {topPerformer && (
+          {topPerformer ? (
             <div className="p-3.5 rounded-xl bg-slate-950 border border-emerald-500/20 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <img
@@ -424,6 +425,15 @@ export default function CEOCommandCenter({
                 <p className="text-[9px] text-slate-500 font-mono">Performance</p>
               </div>
             </div>
+          ) : (
+            <EmptyState
+              compact
+              icon={Award}
+              title="No Top Performer Yet"
+              description="Onboard team members to calculate performance scores and highlight top talent."
+              actionLabel="Add Employee"
+              onAction={() => onSelectModule('employees')}
+            />
           )}
 
           {lowestPerformer && lowestPerformer.id !== topPerformer?.id && (
@@ -465,7 +475,12 @@ export default function CEOCommandCenter({
 
           <div className="space-y-2 max-h-52 overflow-y-auto custom-scrollbar">
             {needsAttention.length === 0 ? (
-              <p className="text-xs text-slate-500 italic py-4 text-center">No workforce anomalies flagged.</p>
+              <EmptyState
+                compact
+                icon={CheckCircle2}
+                title="Zero Workforce Anomalies"
+                description="All employee performance & attendance metrics are in compliance."
+              />
             ) : (
               needsAttention.map(emp => (
                 <div key={emp.id} className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
@@ -535,7 +550,14 @@ export default function CEOCommandCenter({
 
           <div className="space-y-2.5 max-h-60 overflow-y-auto custom-scrollbar">
             {decisions.length === 0 ? (
-              <p className="text-xs text-slate-500 italic py-4 text-center">No executive decisions logged yet.</p>
+              <EmptyState
+                compact
+                icon={FileText}
+                title="No CEO Decisions Logged"
+                description="Log corporate directives, policy changes, and executive actions."
+                actionLabel="Log Decision"
+                onAction={() => setActiveModal('decision')}
+              />
             ) : (
               decisions.map(dec => (
                 <div key={dec.id} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
@@ -569,7 +591,14 @@ export default function CEOCommandCenter({
 
           <div className="space-y-2.5 max-h-60 overflow-y-auto custom-scrollbar">
             {meetings.length === 0 ? (
-              <p className="text-xs text-slate-500 italic py-4 text-center">No upcoming meetings scheduled for today.</p>
+              <EmptyState
+                compact
+                icon={CalendarIcon}
+                title="No Meetings Scheduled"
+                description="Schedule team syncs, client reviews, or executive briefings."
+                actionLabel="Schedule Sync"
+                onAction={() => onSelectModule('meetings')}
+              />
             ) : (
               meetings.map(m => (
                 <div key={m.id} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">

@@ -31,6 +31,7 @@ import {
   Bar
 } from 'recharts';
 import { Employee, Project, Task, AttendanceRecord, NotificationItem } from '@/types';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface DashboardViewProps {
   employees: Employee[];
@@ -281,7 +282,15 @@ export default function DashboardView({
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-slate-400 mt-2">No employee data logged yet.</p>
+              <EmptyState
+                compact
+                icon={Award}
+                title="No Top Performer Yet"
+                description="Onboard team members to calculate performance scores and highlight top talent."
+                actionLabel="Add Employee"
+                onAction={() => onSelectModule('employees')}
+                className="mt-3"
+              />
             )}
           </div>
 
@@ -366,9 +375,12 @@ export default function DashboardView({
                 </div>
               ))
             ) : (
-              <p className="text-xs text-slate-400 py-4 text-center">
-                All employee performance metrics meet CEO standards.
-              </p>
+              <EmptyState
+                compact
+                icon={CheckCircle2}
+                title="All Workforce Clear"
+                description="No employee performance anomalies or active warnings requiring intervention."
+              />
             )}
           </div>
         </div>
@@ -389,25 +401,34 @@ export default function DashboardView({
           </div>
 
           <div className="space-y-2">
-            {(notifications || []).slice(0, 4).map((n) => (
-              <div
-                key={n.id}
-                className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 flex items-start gap-3"
-              >
-                <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${
-                  n.severity === 'urgent' ? 'bg-rose-500/10 text-rose-400' : 'bg-indigo-500/10 text-indigo-400'
-                }`}>
-                  <Zap className="w-3.5 h-3.5" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold text-slate-200">{n.title}</p>
-                    <span className="text-[10px] text-slate-500">{n.timestamp}</span>
+            {(notifications || []).length > 0 ? (
+              (notifications || []).slice(0, 4).map((n) => (
+                <div
+                  key={n.id}
+                  className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 flex items-start gap-3"
+                >
+                  <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${
+                    n.severity === 'urgent' ? 'bg-rose-500/10 text-rose-400' : 'bg-indigo-500/10 text-indigo-400'
+                  }`}>
+                    <Zap className="w-3.5 h-3.5" />
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{n.message}</p>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-slate-200">{n.title}</p>
+                      <span className="text-[10px] text-slate-500">{n.timestamp}</span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{n.message}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <EmptyState
+                compact
+                icon={Zap}
+                title="Activity Feed Quiet"
+                description="System notifications and corporate logs will appear here live."
+              />
+            )}
           </div>
         </div>
       </div>

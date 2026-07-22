@@ -25,6 +25,7 @@ import {
 import { Employee } from '@/types';
 import { createItem, updateItem, deleteItem } from '@/lib/services/firestore';
 import { callAI } from '@/lib/aiClient';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface EmployeeViewProps {
   employees: Employee[];
@@ -231,83 +232,102 @@ export default function EmployeeView({ employees, onRefresh }: EmployeeViewProps
       </div>
 
       {/* Employee Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map((emp) => (
-          <div
-            key={emp.id}
-            onClick={() => setSelectedEmp(emp)}
-            className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800/80 hover:border-indigo-500/50 cursor-pointer transition-all shadow-lg hover:shadow-indigo-500/10 flex flex-col justify-between space-y-4 group"
-          >
-            {/* Top row */}
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <img
-                  src={emp.photo || 'https://picsum.photos/seed/avatar/200/200'}
-                  alt={emp.name}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-slate-800 group-hover:border-indigo-500 transition-colors"
-                />
-                <div>
-                  <h3 className="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors">
-                    {emp.name}
-                  </h3>
-                  <p className="text-xs text-slate-400">{emp.position}</p>
-                  <span className="text-[10px] text-indigo-400 font-mono mt-0.5 block">{emp.employeeId}</span>
+      {filtered.length === 0 ? (
+        <EmptyState
+          icon={Users}
+          title={employees.length === 0 ? "No Employees in Workforce" : "No Matching Employees"}
+          description={
+            employees.length === 0
+              ? "Your workforce database is empty. Add your first team member or import corporate staff."
+              : `No team members match search query "${searchTerm}" or filter "${filterStatus}".`
+          }
+          actionLabel="+ Add Employee"
+          onAction={() => setShowAddModal(true)}
+          secondaryActionLabel={searchTerm || filterStatus !== 'All' ? "Clear Search" : undefined}
+          onSecondaryAction={() => {
+            setSearchTerm('');
+            setFilterStatus('All');
+          }}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((emp) => (
+            <div
+              key={emp.id}
+              onClick={() => setSelectedEmp(emp)}
+              className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800/80 hover:border-indigo-500/50 cursor-pointer transition-all shadow-lg hover:shadow-indigo-500/10 flex flex-col justify-between space-y-4 group"
+            >
+              {/* Top row */}
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={emp.photo || 'https://picsum.photos/seed/avatar/200/200'}
+                    alt={emp.name}
+                    className="w-12 h-12 rounded-full object-cover border-2 border-slate-800 group-hover:border-indigo-500 transition-colors"
+                  />
+                  <div>
+                    <h3 className="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors">
+                      {emp.name}
+                    </h3>
+                    <p className="text-xs text-slate-400">{emp.position}</p>
+                    <span className="text-[10px] text-indigo-400 font-mono mt-0.5 block">{emp.employeeId}</span>
+                  </div>
+                </div>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  emp.status === 'Active'
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                    : emp.status === 'On Leave'
+                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                    : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                }`}>
+                  {emp.status}
+                </span>
+              </div>
+
+              {/* Performance Bar */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-slate-400">Performance Score</span>
+                  <span className={`font-bold ${emp.performanceScore >= 90 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    {emp.performanceScore}%
+                  </span>
+                </div>
+                <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${emp.performanceScore >= 90 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                    style={{ width: `${emp.performanceScore}%` }}
+                  />
                 </div>
               </div>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                emp.status === 'Active'
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                  : emp.status === 'On Leave'
-                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                  : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-              }`}>
-                {emp.status}
-              </span>
-            </div>
 
-            {/* Performance Bar */}
-            <div className="space-y-1">
-              <div className="flex justify-between text-[11px]">
-                <span className="text-slate-400">Performance Score</span>
-                <span className={`font-bold ${emp.performanceScore >= 90 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                  {emp.performanceScore}%
-                </span>
+              {/* Skills Badges */}
+              <div className="flex flex-wrap gap-1">
+                {(emp.skills || []).slice(0, 3).map((sk, idx) => (
+                  <span key={idx} className="text-[10px] bg-slate-950 text-slate-300 border border-slate-800 px-2 py-0.5 rounded-md">
+                    {sk}
+                  </span>
+                ))}
+                {(emp.skills || []).length > 3 && (
+                  <span className="text-[10px] text-slate-500 py-0.5">+{(emp.skills || []).length - 3} more</span>
+                )}
               </div>
-              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${emp.performanceScore >= 90 ? 'bg-emerald-500' : 'bg-amber-500'}`}
-                  style={{ width: `${emp.performanceScore}%` }}
-                />
-              </div>
-            </div>
 
-            {/* Skills Badges */}
-            <div className="flex flex-wrap gap-1">
-              {(emp.skills || []).slice(0, 3).map((sk, idx) => (
-                <span key={idx} className="text-[10px] bg-slate-950 text-slate-300 border border-slate-800 px-2 py-0.5 rounded-md">
-                  {sk}
-                </span>
-              ))}
-              {(emp.skills || []).length > 3 && (
-                <span className="text-[10px] text-slate-500 py-0.5">+{(emp.skills || []).length - 3} more</span>
-              )}
-            </div>
-
-            {/* Bottom Details */}
-            <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-              <div className="flex items-center gap-1">
-                <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-                <span>${emp.salary?.toLocaleString() || '0'}/yr</span>
+              {/* Bottom Details */}
+              <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                <div className="flex items-center gap-1">
+                  <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>${emp.salary?.toLocaleString() || '0'}/yr</span>
+                </div>
+                {(emp.warnings || []).length > 0 && (
+                  <span className="text-rose-400 font-medium text-[10px] flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" /> {(emp.warnings || []).length} Warning
+                  </span>
+                )}
               </div>
-              {(emp.warnings || []).length > 0 && (
-                <span className="text-rose-400 font-medium text-[10px] flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" /> {(emp.warnings || []).length} Warning
-                </span>
-              )}
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Detailed Employee Modal */}
       {selectedEmp && (

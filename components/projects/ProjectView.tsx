@@ -21,6 +21,7 @@ import {
 import { Project, Employee, Task } from '@/types';
 import { createItem, updateItem, deleteItem } from '@/lib/services/firestore';
 import { callAI } from '@/lib/aiClient';
+import EmptyState from '@/components/ui/EmptyState';
 import ProjectManager from './ProjectManager';
 
 interface ProjectViewProps {
@@ -211,100 +212,119 @@ export default function ProjectView({ projects, employees, tasks, onRefresh }: P
       </div>
 
       {/* Projects Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map((prj) => {
-          const assignedEmps = employees.filter(e => prj.employeeIds?.includes(e.id));
-          const projectTasks = tasks.filter(t => t.projectId === prj.id);
-          const completedTasksCount = projectTasks.filter(t => t.status === 'Completed').length;
+      {filtered.length === 0 ? (
+        <EmptyState
+          icon={Briefcase}
+          title={projects.length === 0 ? "No Active Projects" : "No Matching Projects"}
+          description={
+            projects.length === 0
+              ? "Your project portfolio is currently empty. Initialize a new project or create tasks for your team."
+              : `No projects match your search query "${searchTerm}" or filter "${filterStatus}".`
+          }
+          actionLabel="+ New Project"
+          onAction={() => setShowAddModal(true)}
+          secondaryActionLabel={searchTerm || filterStatus !== 'All' ? "Clear Filters" : undefined}
+          onSecondaryAction={() => {
+            setSearchTerm('');
+            setFilterStatus('All');
+          }}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((prj) => {
+            const assignedEmps = employees.filter(e => prj.employeeIds?.includes(e.id));
+            const projectTasks = tasks.filter(t => t.projectId === prj.id);
+            const completedTasksCount = projectTasks.filter(t => t.status === 'Completed').length;
 
-          return (
-            <div
-              key={prj.id}
-              onClick={() => setSelectedProject(prj)}
-              className={`p-5 rounded-2xl bg-slate-900/90 border cursor-pointer transition-all shadow-lg flex flex-col justify-between space-y-4 group ${
-                prj.status === 'At Risk'
-                  ? 'border-rose-500/50 hover:border-rose-400'
-                  : 'border-slate-800/80 hover:border-emerald-500/50'
-              }`}
-            >
-              {/* Header */}
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="text-[10px] text-slate-400 font-mono block">{prj.projectId}</span>
-                  <h3 className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors mt-0.5">
-                    {prj.name}
-                  </h3>
-                  <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                    <Briefcase className="w-3 h-3 text-emerald-400" /> {prj.client}
-                  </p>
-                </div>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+            return (
+              <div
+                key={prj.id}
+                onClick={() => setSelectedProject(prj)}
+                className={`p-5 rounded-2xl bg-slate-900/90 border cursor-pointer transition-all shadow-lg flex flex-col justify-between space-y-4 group ${
                   prj.status === 'At Risk'
-                    ? 'bg-rose-500/10 text-rose-400 border-rose-500/20 animate-pulse'
-                    : prj.status === 'In Progress'
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                    : prj.status === 'Completed'
-                    ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
-                    : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                }`}>
-                  {prj.status}
-                </span>
-              </div>
+                    ? 'border-rose-500/50 hover:border-rose-400'
+                    : 'border-slate-800/80 hover:border-emerald-500/50'
+                }`}
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-mono block">{prj.projectId}</span>
+                    <h3 className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors mt-0.5">
+                      {prj.name}
+                    </h3>
+                    <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                      <Briefcase className="w-3 h-3 text-emerald-400" /> {prj.client}
+                    </p>
+                  </div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    prj.status === 'At Risk'
+                      ? 'bg-rose-500/10 text-rose-400 border-rose-500/20 animate-pulse'
+                      : prj.status === 'In Progress'
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      : prj.status === 'Completed'
+                      ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+                      : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                  }`}>
+                    {prj.status}
+                  </span>
+                </div>
 
-              {/* Progress Bar */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-[11px]">
-                  <span className="text-slate-400">Milestone Delivery</span>
-                  <span className="font-bold text-emerald-400">{prj.progress}%</span>
-                </div>
-                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${prj.status === 'At Risk' ? 'bg-rose-500' : 'bg-emerald-500'}`}
-                    style={{ width: `${prj.progress}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Budget & Deadlines */}
-              <div className="grid grid-cols-2 gap-2 text-xs bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                <div>
-                  <span className="text-[10px] text-slate-500 block">Total Budget</span>
-                  <span className="font-bold text-slate-200">${prj.budget?.toLocaleString()}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-500 block">Deadline</span>
-                  <span className="font-bold text-amber-400">{prj.deadline}</span>
-                </div>
-              </div>
-
-              {/* Footer Team & Task Count */}
-              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-                <div className="flex -space-x-2">
-                  {(assignedEmps || []).slice(0, 3).map(e => (
-                    <img
-                      key={e.id}
-                      src={e.photo || 'https://picsum.photos/seed/avatar/200/200'}
-                      alt={e.name}
-                      title={e.name}
-                      className="w-6 h-6 rounded-full border-2 border-slate-900 object-cover"
+                {/* Progress Bar */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-slate-400">Milestone Delivery</span>
+                    <span className="font-bold text-emerald-400">{prj.progress}%</span>
+                  </div>
+                  <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${prj.status === 'At Risk' ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                      style={{ width: `${prj.progress}%` }}
                     />
-                  ))}
-                  {(assignedEmps || []).length > 3 && (
-                    <div className="w-6 h-6 rounded-full bg-slate-800 border-2 border-slate-900 text-[10px] flex items-center justify-center font-bold text-slate-300">
-                      +{(assignedEmps || []).length - 3}
-                    </div>
-                  )}
+                  </div>
                 </div>
 
-                <span className="text-[11px] font-medium text-slate-300 flex items-center gap-1">
-                  <CheckSquare className="w-3.5 h-3.5 text-purple-400" />
-                  {completedTasksCount}/{projectTasks.length} Tasks
-                </span>
+                {/* Budget & Deadlines */}
+                <div className="grid grid-cols-2 gap-2 text-xs bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                  <div>
+                    <span className="text-[10px] text-slate-500 block">Total Budget</span>
+                    <span className="font-bold text-slate-200">${prj.budget?.toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-500 block">Deadline</span>
+                    <span className="font-bold text-amber-400">{prj.deadline}</span>
+                  </div>
+                </div>
+
+                {/* Footer Team & Task Count */}
+                <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                  <div className="flex -space-x-2">
+                    {(assignedEmps || []).slice(0, 3).map(e => (
+                      <img
+                        key={e.id}
+                        src={e.photo || 'https://picsum.photos/seed/avatar/200/200'}
+                        alt={e.name}
+                        title={e.name}
+                        className="w-6 h-6 rounded-full border-2 border-slate-900 object-cover"
+                      />
+                    ))}
+                    {(assignedEmps || []).length > 3 && (
+                      <div className="w-6 h-6 rounded-full bg-slate-800 border-2 border-slate-900 text-[10px] flex items-center justify-center font-bold text-slate-300">
+                        +{(assignedEmps || []).length - 3}
+                      </div>
+                    )}
+                  </div>
+
+                  <span className="text-[11px] font-medium text-slate-300 flex items-center gap-1">
+                    <CheckSquare className="w-3.5 h-3.5 text-purple-400" />
+                    {completedTasksCount}/{projectTasks.length} Tasks
+                  </span>
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
         </>
       )}
 

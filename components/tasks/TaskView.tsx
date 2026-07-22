@@ -19,6 +19,7 @@ import {
 import { Task, Employee, Project } from '@/types';
 import { createItem, updateItem, deleteItem } from '@/lib/services/firestore';
 import { callAI } from '@/lib/aiClient';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface TaskViewProps {
   tasks: Task[];
@@ -240,125 +241,170 @@ export default function TaskView({ tasks, employees, projects, onRefresh }: Task
 
       {/* Kanban View */}
       {viewMode === 'kanban' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {kanbanColumns.map((col) => {
-            const colTasks = filteredTasks.filter(t => t.status === col);
+        filteredTasks.length === 0 ? (
+          <EmptyState
+            icon={CheckSquare}
+            title={tasks.length === 0 ? "No Tasks Created Yet" : "No Matching Tasks"}
+            description={
+              tasks.length === 0
+                ? "Your task execution board is empty. Generate tasks using Gemini AI or create manual tasks."
+                : `No tasks match search query "${searchTerm}".`
+            }
+            actionLabel="AI Task Generator"
+            onAction={() => setShowAITaskModal(true)}
+            secondaryActionLabel="Manual Task"
+            onSecondaryAction={() => setShowAddModal(true)}
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {kanbanColumns.map((col) => {
+              const colTasks = filteredTasks.filter(t => t.status === col);
 
-            return (
-              <div key={col} className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800/80 space-y-3 flex flex-col min-h-[500px]">
-                <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                  <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${
-                      col === 'Todo' ? 'bg-amber-400' :
-                      col === 'In Progress' ? 'bg-indigo-400' :
-                      col === 'Review' ? 'bg-purple-400' : 'bg-emerald-400'
-                    }`} />
-                    {col}
-                  </h3>
-                  <span className="text-xs font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded-full border border-slate-800">
-                    {colTasks.length}
-                  </span>
-                </div>
+              return (
+                <div key={col} className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800/80 space-y-3 flex flex-col min-h-[500px]">
+                  <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                    <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${
+                        col === 'Todo' ? 'bg-amber-400' :
+                        col === 'In Progress' ? 'bg-indigo-400' :
+                        col === 'Review' ? 'bg-purple-400' : 'bg-emerald-400'
+                      }`} />
+                      {col}
+                    </h3>
+                    <span className="text-xs font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded-full border border-slate-800">
+                      {colTasks.length}
+                    </span>
+                  </div>
 
-                <div className="space-y-3 flex-1 overflow-y-auto custom-scrollbar">
-                  {colTasks.map((tsk) => (
-                    <div
-                      key={tsk.id}
-                      className="p-4 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-purple-500/50 transition-all space-y-3 shadow-md group"
-                    >
-                      <div className="flex items-start justify-between">
-                        <span className="text-[10px] font-mono text-slate-500">{tsk.taskId}</span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                          tsk.priority === 'Urgent' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
-                          tsk.priority === 'High' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                          'bg-slate-900 text-slate-300 border-slate-800'
-                        }`}>
-                          {tsk.priority}
-                        </span>
-                      </div>
-
-                      <h4 className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors">
-                        {tsk.title}
-                      </h4>
-                      <p className="text-[11px] text-slate-400 line-clamp-2">{tsk.description}</p>
-
-                      <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-[10px] text-slate-400">
-                        <span className="flex items-center gap-1 font-medium text-slate-300">
-                          <User className="w-3 h-3 text-purple-400" /> {tsk.employeeName || 'Unassigned'}
-                        </span>
-                        <span className="flex items-center gap-1 font-mono text-amber-400">
-                          <Clock className="w-3 h-3" /> {tsk.estimatedHours}h
-                        </span>
-                      </div>
-
-                      {/* CEO Quick Status Move */}
-                      <div className="pt-2 border-t border-slate-900/80 flex items-center justify-between">
-                        <select
-                          value={tsk.status}
-                          onChange={(e) => handleUpdateStatus(tsk.id, e.target.value as any)}
-                          className="bg-slate-900 border border-slate-800 text-slate-300 rounded px-1.5 py-0.5 text-[10px] focus:outline-none"
-                        >
-                          {kanbanColumns.map(st => (
-                            <option key={st} value={st}>{st}</option>
-                          ))}
-                        </select>
-
+                  <div className="space-y-3 flex-1 overflow-y-auto custom-scrollbar">
+                    {colTasks.length === 0 ? (
+                      <div className="p-4 rounded-xl border border-dashed border-slate-800/80 flex flex-col items-center justify-center text-center text-slate-500 py-10 my-2 space-y-2">
+                        <CheckSquare className="w-5 h-5 text-slate-600" />
+                        <p className="text-xs font-medium text-slate-400">No tasks in {col}</p>
                         <button
-                          onClick={() => handleDeleteTask(tsk.id)}
-                          className="text-slate-500 hover:text-rose-400 text-[10px]"
+                          onClick={() => setShowAddModal(true)}
+                          className="text-[10px] text-purple-400 hover:underline"
                         >
-                          Delete
+                          + Add task
                         </button>
                       </div>
-                    </div>
-                  ))}
+                    ) : (
+                      colTasks.map((tsk) => (
+                        <div
+                          key={tsk.id}
+                          className="p-4 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-purple-500/50 transition-all space-y-3 shadow-md group"
+                        >
+                          <div className="flex items-start justify-between">
+                            <span className="text-[10px] font-mono text-slate-500">{tsk.taskId}</span>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                              tsk.priority === 'Urgent' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
+                              tsk.priority === 'High' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                              'bg-slate-900 text-slate-300 border-slate-800'
+                            }`}>
+                              {tsk.priority}
+                            </span>
+                          </div>
+
+                          <h4 className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors">
+                            {tsk.title}
+                          </h4>
+                          <p className="text-[11px] text-slate-400 line-clamp-2">{tsk.description}</p>
+
+                          <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-[10px] text-slate-400">
+                            <span className="flex items-center gap-1 font-medium text-slate-300">
+                              <User className="w-3 h-3 text-purple-400" /> {tsk.employeeName || 'Unassigned'}
+                            </span>
+                            <span className="flex items-center gap-1 font-mono text-amber-400">
+                              <Clock className="w-3 h-3" /> {tsk.estimatedHours}h
+                            </span>
+                          </div>
+
+                          {/* CEO Quick Status Move */}
+                          <div className="pt-2 border-t border-slate-900/80 flex items-center justify-between">
+                            <select
+                              value={tsk.status}
+                              onChange={(e) => handleUpdateStatus(tsk.id, e.target.value as any)}
+                              className="bg-slate-900 border border-slate-800 text-slate-300 rounded px-1.5 py-0.5 text-[10px] focus:outline-none"
+                            >
+                              {kanbanColumns.map(st => (
+                                <option key={st} value={st}>{st}</option>
+                              ))}
+                            </select>
+
+                            <button
+                              onClick={() => handleDeleteTask(tsk.id)}
+                              className="text-slate-500 hover:text-rose-400 text-[10px]"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )
       ) : (
         /* Table View */
-        <div className="bg-slate-900/90 rounded-2xl border border-slate-800 overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] border-b border-slate-800">
-              <tr>
-                <th className="p-3">ID</th>
-                <th className="p-3">Title</th>
-                <th className="p-3">Assignee</th>
-                <th className="p-3">Priority</th>
-                <th className="p-3">Difficulty</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Quality Score</th>
-                <th className="p-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/80">
-              {filteredTasks.map((t) => (
-                <tr key={t.id} className="hover:bg-slate-950/50 transition-colors">
-                  <td className="p-3 font-mono text-indigo-400">{t.taskId}</td>
-                  <td className="p-3 font-bold text-white">{t.title}</td>
-                  <td className="p-3 text-slate-300">{t.employeeName}</td>
-                  <td className="p-3">
-                    <span className="font-bold text-amber-400">{t.priority}</span>
-                  </td>
-                  <td className="p-3">{t.difficulty}</td>
-                  <td className="p-3">
-                    <span className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-200">
-                      {t.status}
-                    </span>
-                  </td>
-                  <td className="p-3 font-mono font-bold text-emerald-400">{t.qualityScore}%</td>
-                  <td className="p-3">
-                    <button onClick={() => handleDeleteTask(t.id)} className="text-rose-400 hover:underline">
-                      Delete
-                    </button>
-                  </td>
+        filteredTasks.length === 0 ? (
+          <EmptyState
+            icon={CheckSquare}
+            title={tasks.length === 0 ? "No Tasks Created Yet" : "No Matching Tasks"}
+            description={
+              tasks.length === 0
+                ? "Your task database is empty. Generate tasks with AI or create manual tasks."
+                : `No tasks match your search query "${searchTerm}".`
+            }
+            actionLabel="AI Task Generator"
+            onAction={() => setShowAITaskModal(true)}
+            secondaryActionLabel="Manual Task"
+            onSecondaryAction={() => setShowAddModal(true)}
+          />
+        ) : (
+          <div className="bg-slate-900/90 rounded-2xl border border-slate-800 overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-300">
+              <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+                <tr>
+                  <th className="p-3">ID</th>
+                  <th className="p-3">Title</th>
+                  <th className="p-3">Assignee</th>
+                  <th className="p-3">Priority</th>
+                  <th className="p-3">Difficulty</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3">Quality Score</th>
+                  <th className="p-3">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-800/80">
+                {filteredTasks.map((t) => (
+                  <tr key={t.id} className="hover:bg-slate-950/50 transition-colors">
+                    <td className="p-3 font-mono text-indigo-400">{t.taskId}</td>
+                    <td className="p-3 font-bold text-white">{t.title}</td>
+                    <td className="p-3 text-slate-300">{t.employeeName}</td>
+                    <td className="p-3">
+                      <span className="font-bold text-amber-400">{t.priority}</span>
+                    </td>
+                    <td className="p-3">{t.difficulty}</td>
+                    <td className="p-3">
+                      <span className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-200">
+                        {t.status}
+                      </span>
+                    </td>
+                    <td className="p-3 font-mono font-bold text-emerald-400">{t.qualityScore}%</td>
+                    <td className="p-3">
+                      <button onClick={() => handleDeleteTask(t.id)} className="text-rose-400 hover:underline">
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
       )}
 
       {/* AI Task Generator Modal */}
