@@ -40,41 +40,25 @@ import {
   TimeLog
 } from '@/types';
 
-// Default Settings (Localized for Nepal)
+// Default Settings - Optimized for Nepal Operations with Bikram Sambat
 export const DEFAULT_SETTINGS: CompanySettings = {
-  companyName: 'Sovryx Nepal Pvt. Ltd.',
-  ceoName: 'Executive Director',
-  ceoEmail: 'ceo@sovryx.np',
-  country: 'Nepal',
+  companyName: '',
+  ceoName: '',
+  ceoEmail: '',
   currency: 'NPR',
   currencySymbol: 'Rs.',
   timezone: 'Asia/Kathmandu',
   dateFormat: 'DD/MM/YYYY',
   timeFormat: '12h',
   weekStartsOn: 'Sunday',
-  weekendDays: ['Saturday'],
-  workingHoursStart: '10:00',
-  workingHoursEnd: '17:00',
-  companyRegistrationNo: '284910/080/081',
-  panNo: '609812345',
-  vatNo: '609812345',
-  ocrRegistrationNo: 'OCR-NP-2080-112',
-  irdRegistration: 'Kathmandu-IRD-04',
-  province: 'Bagmati Province',
-  district: 'Kathmandu',
-  localMunicipality: 'Kathmandu Metropolitan City',
-  wardNumber: '4',
-  businessType: 'Private Limited',
-  businessCategory: 'IT & Software',
-  address: {
-    province: 'Bagmati Province',
-    district: 'Kathmandu',
-    municipality: 'Kathmandu Metropolitan City',
-    wardNo: '4',
-    tole: 'Maharajgunj',
-    postalCode: '44600',
-    country: 'Nepal'
-  },
+  defaultCalendar: 'BS',
+  showDualDates: true,
+  fiscalYearFormat: '2083/84 (BS)',
+  country: 'Nepal',
+  businessType: 'Private Limited (Pvt. Ltd.)',
+  businessCategory: 'IT & Digital Services',
+  workingHoursStart: '09:00',
+  workingHoursEnd: '18:00',
   aiAutoRiskDetection: true,
   aiDailyReportEnabled: true,
   theme: 'dark'

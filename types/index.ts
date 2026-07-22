@@ -1,41 +1,7 @@
 export type EmployeeStatus = 'Active' | 'On Leave' | 'Terminated';
 
-export interface NepalAddress {
-  province?: string;
-  district?: string;
-  municipality?: string;
-  wardNo?: string | number;
-  tole?: string;
-  postalCode?: string;
-  country?: string;
-  formattedAddress?: string;
-}
-
-export interface BankInfo {
-  bankName: string;
-  branch: string;
-  accountNumber: string;
-}
-
-export interface DigitalWallets {
-  esewaNo?: string;
-  khaltiNo?: string;
-  imePayNo?: string;
-}
-
-export interface EmployeeKYCDocuments {
-  joiningLetter?: string;
-  appointmentLetter?: string;
-  citizenshipCopy?: string;
-  academicCertificates?: string[];
-  trainingCertificates?: string[];
-  offerLetter?: string;
-  resignationLetter?: string;
-}
-
 export interface Employee {
   id: string;
-  companyId?: string;
   employeeId: string;
   name: string;
   photo?: string;
@@ -49,20 +15,8 @@ export interface Employee {
   skills: string[];
   performanceScore: number; // 0 - 100
   attendanceScore: number; // 0 - 100
-  
-  // Nepal Localization Fields
-  citizenshipNo?: string;
-  citizenshipDistrict?: string;
-  nationalId?: string;
-  panNo?: string;
-  permanentAddress?: NepalAddress | string;
-  temporaryAddress?: NepalAddress | string;
-  bankInfo?: BankInfo;
-  digitalWallets?: DigitalWallets;
-  kycDocuments?: EmployeeKYCDocuments;
-
   warnings: { id: string; date: string; reason: string; issuedBy: string }[];
-  documents: { id: string; name: string; url: string; date: string; category?: string }[];
+  documents: { id: string; name: string; url: string; date: string }[];
   notes: { id: string; date: string; text: string; author: string }[];
   biography?: string;
   emergencyContact?: { name: string; relation: string; phone: string };
@@ -130,15 +84,6 @@ export interface Project {
   employeeIds: string[];
   tasksCount?: number;
   completedTasksCount?: number;
-  
-  // Nepal Commercial & Billing Fields
-  quotationNo?: string;
-  contractNo?: string;
-  invoiceNo?: string;
-  advancePayment?: number;
-  remainingBalance?: number;
-  completionCertificateUrl?: string;
-
   documents?: { id: string; name: string; url: string }[];
   createdAt?: string;
 }
@@ -161,8 +106,6 @@ export interface PerformanceMetric {
   updatedAt?: string;
 }
 
-export type AttendanceStatus = 'Present' | 'Late' | 'Absent' | 'On Leave' | 'Half Day' | 'Work From Home' | 'Official Visit' | 'Holiday' | 'Early Leave';
-
 export interface AttendanceRecord {
   id: string;
   employeeId: string;
@@ -170,19 +113,8 @@ export interface AttendanceRecord {
   date: string; // YYYY-MM-DD
   clockIn: string;
   clockOut?: string;
-  status: AttendanceStatus;
+  status: 'Present' | 'Late' | 'Absent' | 'On Leave';
   workHours: number;
-  overtimeHours?: number;
-  notes?: string;
-}
-
-export interface PublicHoliday {
-  id: string;
-  name: string;
-  date: string;
-  dateBS?: string; // Vikram Sambat date (e.g. 2081-06-12)
-  type: 'National' | 'Festival' | 'Regional';
-  isRecurring?: boolean;
   notes?: string;
 }
 
@@ -210,15 +142,6 @@ export interface Client {
   totalSpent: number;
   activeProjectsCount: number;
   status: 'Active' | 'Lead' | 'Inactive';
-  
-  // Nepal Client Specifics
-  panNo?: string;
-  vatNo?: string;
-  companyRegistrationNo?: string;
-  contactPerson?: string;
-  billingAddress?: NepalAddress | string;
-  deliveryAddress?: NepalAddress | string;
-
   notes?: string;
   createdAt?: string;
 }
@@ -226,13 +149,12 @@ export interface Client {
 export interface CompanyDocument {
   id: string;
   title: string;
-  category: 'Policy' | 'Contract' | 'Project Brief' | 'Financial' | 'Technical' | 'Citizenship' | 'PAN Certificate' | 'Company Registration' | 'Tax Clearance' | 'Invoice' | 'General';
+  category: 'Policy' | 'Contract' | 'Project Brief' | 'Financial' | 'Technical' | 'General';
   url: string;
   uploadedBy: string;
   date: string;
   tags: string[];
   size?: string;
-  fileType?: 'PDF' | 'Word' | 'Excel' | 'Image' | 'Zip' | 'Other';
 }
 
 export interface NotificationItem {
@@ -249,7 +171,7 @@ export interface NotificationItem {
 export interface CompanyReport {
   id: string;
   title: string;
-  type: 'Daily' | 'Weekly' | 'Monthly' | 'Executive' | 'Employee' | 'Attendance' | 'Leave' | 'Project' | 'Task' | 'Performance' | 'Client' | 'Financial' | 'Yearly';
+  type: 'Daily' | 'Weekly' | 'Monthly' | 'Executive';
   date: string;
   summary: string;
   metrics: {
@@ -270,65 +192,35 @@ export interface CompanySettings {
   ceoName: string;
   ceoEmail: string;
   currency: string;
-  currencySymbol: string;
+  currencySymbol?: string;
   timezone: string;
-  dateFormat: string;
-  timeFormat: '12h' | '24h';
-  weekStartsOn: 'Sunday' | 'Monday' | 'Saturday';
-  weekendDays: string[];
-  workingHoursStart: string;
-  workingHoursEnd: string;
-  
-  // Nepal Registration & Corporate Details
+  dateFormat?: string;
+  timeFormat?: '12h' | '24h';
+  weekStartsOn?: string;
+  defaultCalendar?: 'BS' | 'AD';
+  showDualDates?: boolean;
+  fiscalYearFormat?: string;
   companyRegistrationNo?: string;
   panNo?: string;
   vatNo?: string;
   ocrRegistrationNo?: string;
   irdRegistration?: string;
-  localMunicipality?: string;
-  wardNumber?: string;
-  district?: string;
-  province?: string;
-  country: string;
-  businessType?: 'Private Limited' | 'Partnership' | 'Sole Proprietorship' | 'Public Limited' | 'Non-Profit';
-  businessCategory?: 'IT & Software' | 'Service' | 'Trading' | 'Manufacturing' | 'Consulting' | 'Other';
-  address?: NepalAddress;
-
+  businessType?: string;
+  businessCategory?: string;
+  country?: string;
+  address?: {
+    province?: string;
+    district?: string;
+    municipality?: string;
+    wardNo?: string;
+    tole?: string;
+    postalCode?: string;
+  };
+  workingHoursStart: string;
+  workingHoursEnd: string;
   aiAutoRiskDetection: boolean;
   aiDailyReportEnabled: boolean;
   theme: 'dark' | 'light' | 'system';
-}
-
-export interface PayrollDeductions {
-  providentFund?: number; // PF 10%
-  citizenInvestmentTrust?: number; // CIT
-  socialSecurityFund?: number; // SSF
-  advanceSalary?: number;
-  taxDeduction?: number; // TDS / Income Tax
-  otherDeductions?: number;
-}
-
-export interface PayrollRecord {
-  id: string;
-  companyId?: string;
-  employeeId: string;
-  employeeName: string;
-  employeePosition?: string;
-  panNo?: string;
-  month: string; // e.g. "Shrawan 2081" or "July 2026"
-  basicSalary: number;
-  allowances: number;
-  bonus: number;
-  festivalBonus: number; // Dashain / Tihar Festival Allowance
-  overtimePay: number;
-  grossSalary: number;
-  deductions: PayrollDeductions;
-  totalDeductions: number;
-  netSalary: number;
-  status: 'Draft' | 'Approved' | 'Paid';
-  paymentMethod: 'Bank Transfer' | 'eSewa' | 'Khalti' | 'IME Pay' | 'Cash';
-  paidDate?: string;
-  createdAt?: string;
 }
 
 // ==========================================
@@ -557,23 +449,11 @@ export interface ResourceAllocation {
 
 export type LeaveStatus = 'Pending' | 'Approved' | 'Rejected';
 
-export type NepalLeaveType = 
-  | 'Annual Leave' 
-  | 'Sick Leave' 
-  | 'Casual Leave' 
-  | 'Festival Leave' 
-  | 'Marriage Leave' 
-  | 'Maternity Leave' 
-  | 'Paternity Leave' 
-  | 'Unpaid Leave' 
-  | 'Official Leave';
-
 export interface LeaveRequest {
   id: string;
-  companyId?: string;
   employeeId: string;
   employeeName: string;
-  type: NepalLeaveType;
+  type: 'Annual Leave' | 'Sick Leave' | 'Maternity/Paternity' | 'Casual' | 'Unpaid';
   startDate: string;
   endDate: string;
   totalDays: number;
@@ -599,4 +479,16 @@ export interface EmployeeRequest {
   reviewNote?: string;
   createdAt?: string;
 }
+
+export interface Holiday {
+  id: string;
+  title: string;
+  titleNp?: string;
+  dateAD: string; // YYYY-MM-DD
+  dateBS: string; // YYYY-MM-DD (BS)
+  type: 'Public Holiday' | 'Festival' | 'Company Holiday' | 'Optional';
+  isRecurringYearly?: boolean;
+  description?: string;
+}
+
 

@@ -92,9 +92,9 @@ export default function SettingsView({ settings, onRefresh }: SettingsViewProps)
             <Building2 className="w-4 h-4 text-indigo-400" /> CEO & Company Identity
           </h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-slate-300 block mb-1">Company Legal Name *</label>
+              <label className="text-slate-300 block mb-1">Company Legal Name</label>
               <input
                 type="text"
                 value={formSettings.companyName}
@@ -103,7 +103,7 @@ export default function SettingsView({ settings, onRefresh }: SettingsViewProps)
               />
             </div>
             <div>
-              <label className="text-slate-300 block mb-1">CEO / Executive Director Name *</label>
+              <label className="text-slate-300 block mb-1">CEO Sovereign Name</label>
               <input
                 type="text"
                 value={formSettings.ceoName}
@@ -112,7 +112,7 @@ export default function SettingsView({ settings, onRefresh }: SettingsViewProps)
               />
             </div>
             <div>
-              <label className="text-slate-300 block mb-1">CEO Direct Email *</label>
+              <label className="text-slate-300 block mb-1">CEO Direct Email</label>
               <input
                 type="email"
                 value={formSettings.ceoEmail}
@@ -120,206 +120,14 @@ export default function SettingsView({ settings, onRefresh }: SettingsViewProps)
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
               />
             </div>
-          </div>
-
-          <div className="pt-3 border-t border-slate-800/80">
-            <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-3">
-              Nepal Government & Compliance Registrations
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div>
-                <label className="text-slate-300 block mb-1">Company Registration No.</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 284910/080/081"
-                  value={formSettings.companyRegistrationNo || ''}
-                  onChange={e => setFormSettings({ ...formSettings, companyRegistrationNo: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500 font-mono"
-                />
-              </div>
-              <div>
-                <label className="text-slate-300 block mb-1">PAN Number</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 609812345"
-                  value={formSettings.panNo || ''}
-                  onChange={e => setFormSettings({ ...formSettings, panNo: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500 font-mono"
-                />
-              </div>
-              <div>
-                <label className="text-slate-300 block mb-1">VAT Number</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 609812345"
-                  value={formSettings.vatNo || ''}
-                  onChange={e => setFormSettings({ ...formSettings, vatNo: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500 font-mono"
-                />
-              </div>
-              <div>
-                <label className="text-slate-300 block mb-1">OCR Registration</label>
-                <input
-                  type="text"
-                  placeholder="Office of Company Registrar No."
-                  value={formSettings.ocrRegistrationNo || ''}
-                  onChange={e => setFormSettings({ ...formSettings, ocrRegistrationNo: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500 font-mono"
-                />
-              </div>
-              <div>
-                <label className="text-slate-300 block mb-1">IRD Registration</label>
-                <input
-                  type="text"
-                  placeholder="Inland Revenue Office"
-                  value={formSettings.irdRegistration || ''}
-                  onChange={e => setFormSettings({ ...formSettings, irdRegistration: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-              <div>
-                <label className="text-slate-300 block mb-1">Business Category</label>
-                <input
-                  type="text"
-                  placeholder="e.g. IT & Software Services"
-                  value={formSettings.businessCategory || ''}
-                  onChange={e => setFormSettings({ ...formSettings, businessCategory: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-slate-800/80">
-            <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-3">
-              Registered Office Address (Nepal Jurisdiction)
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="text-slate-300 block mb-1">Province</label>
-                <select
-                  value={formSettings.address?.province || 'Bagmati Province'}
-                  onChange={e => setFormSettings({
-                    ...formSettings,
-                    address: { ...(formSettings.address || {}), province: e.target.value }
-                  })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none"
-                >
-                  <option value="Koshi Province">Koshi Province</option>
-                  <option value="Madhesh Province">Madhesh Province</option>
-                  <option value="Bagmati Province">Bagmati Province</option>
-                  <option value="Gandaki Province">Gandaki Province</option>
-                  <option value="Lumbini Province">Lumbini Province</option>
-                  <option value="Karnali Province">Karnali Province</option>
-                  <option value="Sudurpashchim Province">Sudurpashchim Province</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-slate-300 block mb-1">District</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Kathmandu"
-                  value={formSettings.address?.district || ''}
-                  onChange={e => setFormSettings({
-                    ...formSettings,
-                    address: { ...(formSettings.address || {}), district: e.target.value }
-                  })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-slate-300 block mb-1">Municipality / Metro</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Kathmandu Metropolitan"
-                  value={formSettings.address?.municipality || ''}
-                  onChange={e => setFormSettings({
-                    ...formSettings,
-                    address: { ...(formSettings.address || {}), municipality: e.target.value }
-                  })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-slate-300 block mb-1">Ward Number & Tole</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Ward"
-                    value={formSettings.address?.wardNo || ''}
-                    onChange={e => setFormSettings({
-                      ...formSettings,
-                      address: { ...(formSettings.address || {}), wardNo: e.target.value }
-                    })}
-                    className="w-20 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-center font-mono"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Tole name"
-                    value={formSettings.address?.tole || ''}
-                    onChange={e => setFormSettings({
-                      ...formSettings,
-                      address: { ...(formSettings.address || {}), tole: e.target.value }
-                    })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-slate-800/80">
-            <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-3">
-              Regional & Formatting Defaults
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="text-slate-300 block mb-1">Default Country</label>
-                <input
-                  type="text"
-                  value={formSettings.country || 'Nepal'}
-                  onChange={e => setFormSettings({ ...formSettings, country: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"
-                />
-              </div>
-              <div>
-                <label className="text-slate-300 block mb-1">Currency Code & Symbol</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={formSettings.currency || 'NPR'}
-                    onChange={e => setFormSettings({ ...formSettings, currency: e.target.value })}
-                    className="w-20 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-center font-mono"
-                  />
-                  <input
-                    type="text"
-                    value={formSettings.currencySymbol || 'Rs.'}
-                    onChange={e => setFormSettings({ ...formSettings, currencySymbol: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-slate-300 block mb-1">Timezone</label>
-                <input
-                  type="text"
-                  value={formSettings.timezone || 'Asia/Kathmandu'}
-                  onChange={e => setFormSettings({ ...formSettings, timezone: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono"
-                />
-              </div>
-              <div>
-                <label className="text-slate-300 block mb-1">Date Format</label>
-                <select
-                  value={formSettings.dateFormat || 'DD/MM/YYYY'}
-                  onChange={e => setFormSettings({ ...formSettings, dateFormat: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono"
-                >
-                  <option value="DD/MM/YYYY">DD/MM/YYYY (Nepal Standard)</option>
-                  <option value="YYYY-MM-DD">YYYY-MM-DD (ISO)</option>
-                  <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                </select>
-              </div>
+            <div>
+              <label className="text-slate-300 block mb-1">Currency Code</label>
+              <input
+                type="text"
+                value={formSettings.currency}
+                onChange={e => setFormSettings({ ...formSettings, currency: e.target.value })}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
+              />
             </div>
           </div>
         </div>
@@ -356,6 +164,59 @@ export default function SettingsView({ settings, onRefresh }: SettingsViewProps)
                 className="w-4 h-4 accent-indigo-600 rounded"
               />
             </label>
+          </div>
+          <div className="pt-3 border-t border-slate-800/80">
+            <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-indigo-400" /> Calendar & Bikram Sambat (BS) Preferences
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="text-slate-300 block mb-1">Primary Calendar System</label>
+                <select
+                  value={formSettings.defaultCalendar || 'BS'}
+                  onChange={e => setFormSettings({ ...formSettings, defaultCalendar: e.target.value as any })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-medium focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="BS">Bikram Sambat (BS - Nepal Default)</option>
+                  <option value="AD">Gregorian (AD - International)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-slate-300 block mb-1">Show Dual Dates (BS + AD)</label>
+                <select
+                  value={formSettings.showDualDates !== false ? 'true' : 'false'}
+                  onChange={e => setFormSettings({ ...formSettings, showDualDates: e.target.value === 'true' })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="true">Enabled (Show both Bikram Sambat & Gregorian)</option>
+                  <option value="false">Disabled (Show primary calendar only)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-slate-300 block mb-1">Week Starts On</label>
+                <select
+                  value={formSettings.weekStartsOn || 'Sunday'}
+                  onChange={e => setFormSettings({ ...formSettings, weekStartsOn: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="Sunday">Sunday (Nepal Standard Weekend Saturday)</option>
+                  <option value="Monday">Monday (Western Standard)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-slate-300 block mb-1">Fiscal Year Format</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 2083/84 (BS)"
+                  value={formSettings.fiscalYearFormat || '2083/84 (BS)'}
+                  onChange={e => setFormSettings({ ...formSettings, fiscalYearFormat: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+            </div>
           </div>
         </div>
 

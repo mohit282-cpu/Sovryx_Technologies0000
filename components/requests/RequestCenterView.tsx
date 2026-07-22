@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { LeaveRequest, EmployeeRequest, Employee } from '@/types';
 import { updateItem, createItem } from '@/lib/services/firestore';
+import NepaliDatePicker from '@/components/ui/NepaliDatePicker';
+import { adToBs, formatDualDate } from '@/lib/nepaliCalendar';
 
 interface RequestCenterViewProps {
   leaveRequests: LeaveRequest[];
@@ -31,47 +33,40 @@ export default function RequestCenterView({
 }: RequestCenterViewProps) {
   const [activeTab, setActiveTab] = useState<'leave' | 'general'>('leave');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // New Leave Form State
-  const [selectedEmpId, setSelectedEmpId] = useState('');
+  // New Leave Application state
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState(employees[0]?.id || '');
   const [leaveType, setLeaveType] = useState<LeaveRequest['type']>('Annual Leave');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [reason, setReason] = useState('');
+  const [startDateAD, setStartDateAD] = useState(new Date().toISOString().split('T')[0]);
+  const [endDateAD, setEndDateAD] = useState(new Date().toISOString().split('T')[0]);
+  const [totalDays, setTotalDays] = useState(1);
+  const [leaveReason, setLeaveReason] = useState('');
 
-  const handleCreateLeave = async (e: React.FormEvent) => {
+  const handleCreateLeaveRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedEmpId || !startDate || !endDate) return;
-    const emp = employees.find(e => e.id === selectedEmpId || e.employeeId === selectedEmpId);
-    if (!emp) return;
+    if (!leaveReason || !startDateAD || !endDateAD) return;
 
-    setIsSubmitting(true);
+    const emp = employees.find(e => e.id === selectedEmployeeId) || employees[0];
+    const empName = emp ? emp.name : 'Employee';
+
     try {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      const diffTime = Math.abs(end.getTime() - start.getTime());
-      const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
       await createItem<Omit<LeaveRequest, 'id'>>('leaveRequests', {
-        employeeId: emp.id,
-        employeeName: emp.name,
+        employeeId: selectedEmployeeId || 'EMP-1',
+        employeeName: empName,
         type: leaveType,
-        startDate,
-        endDate,
-        totalDays: isNaN(totalDays) ? 1 : totalDays,
-        reason,
-        status: 'Pending',
-        createdAt: new Date().toISOString()
+        startDate: startDateAD,
+        endDate: endDateAD,
+        totalDays: Number(totalDays) || 1,
+        reason: leaveReason,
+        status: 'Pending'
       });
 
-      setIsModalOpen(false);
-      setReason('');
+      setIsLeaveModalOpen(false);
+      setLeaveReason('');
       if (onRefresh) onRefresh();
-    } catch (err) {
-      console.error('Failed to submit leave request:', err);
-    } finally {
-      setIsSubmitting(false);
+    } catch (err: any) {
+      alert('Error creating leave request: ' + err.message);
     }
   };
 
@@ -119,8 +114,8 @@ export default function RequestCenterView({
           <p className="text-xs text-slate-400">1-Click CEO approvals for employee leave, equipment requests, and operational support.</p>
         </div>
 
-        {/* Navigation Tabs & Action Button */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
             <button
               onClick={() => setActiveTab('leave')}
@@ -141,10 +136,10 @@ export default function RequestCenterView({
           </div>
 
           <button
-            onClick={() => setIsModalOpen(true)}
-            className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-indigo-600/20 transition-all"
+            onClick={() => setIsLeaveModalOpen(true)}
+            className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg"
           >
-            <Plus className="w-4 h-4" /> Apply Leave
+            <Plus className="w-4 h-4" /> New Leave Application
           </button>
         </div>
       </div>
@@ -156,55 +151,65 @@ export default function RequestCenterView({
               No leave requests submitted in Firestore.
             </div>
           ) : (
-            leaveRequests.map(l => (
-              <div key={l.id} className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3 hover:border-slate-700 transition-all">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-slate-950 text-indigo-400 border border-slate-800">
-                      <User className="w-4 h-4" />
+            leaveRequests.map(l => {
+              const startBS = adToBs(l.startDate);
+              const endBS = adToBs(l.endDate);
+
+              return (
+                <div key={l.id} className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3 hover:border-slate-700 transition-all">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-slate-950 text-indigo-400 border border-slate-800">
+                        <User className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-extrabold text-white">{l.employeeName}</p>
+                        <p className="text-[10px] text-indigo-400 font-mono">{l.type} • {l.totalDays} Days</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-extrabold text-white">{l.employeeName}</p>
-                      <p className="text-[10px] text-indigo-400 font-mono">{l.type} • {l.totalDays} Days</p>
+
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                        l.status === 'Approved' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                        l.status === 'Rejected' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
+                        'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                      }`}>
+                        {l.status}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                      l.status === 'Approved' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                      l.status === 'Rejected' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
-                      'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                    }`}>
-                      {l.status}
-                    </span>
+                  <div className="space-y-1 text-xs text-slate-300">
+                    <p><strong className="text-white">Reason:</strong> {l.reason}</p>
+                    <p className="text-[11px] text-emerald-400 font-bold">
+                      BS Duration: {startBS.formatted} to {endBS.formatted}
+                    </p>
+                    <p className="text-[10px] text-slate-500 font-mono">
+                      AD Duration: {l.startDate} to {l.endDate}
+                    </p>
                   </div>
-                </div>
 
-                <div className="space-y-1 text-xs text-slate-300">
-                  <p><strong className="text-white">Reason:</strong> {l.reason}</p>
-                  <p className="text-[10px] text-slate-500 font-mono">Dates: {l.startDate} to {l.endDate}</p>
+                  {l.status === 'Pending' && (
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                      <button
+                        onClick={() => handleReviewLeave(l.id, 'Rejected')}
+                        disabled={isSubmitting}
+                        className="px-3 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900 text-rose-300 text-xs font-bold border border-rose-800/80 flex items-center gap-1.5"
+                      >
+                        <XCircle className="w-3.5 h-3.5" /> Reject
+                      </button>
+                      <button
+                        onClick={() => handleReviewLeave(l.id, 'Approved')}
+                        disabled={isSubmitting}
+                        className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/30 flex items-center gap-1.5"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Approve Leave
+                      </button>
+                    </div>
+                  )}
                 </div>
-
-                {l.status === 'Pending' && (
-                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
-                    <button
-                      onClick={() => handleReviewLeave(l.id, 'Rejected')}
-                      disabled={isSubmitting}
-                      className="px-3 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900 text-rose-300 text-xs font-bold border border-rose-800/80 flex items-center gap-1.5"
-                    >
-                      <XCircle className="w-3.5 h-3.5" /> Reject
-                    </button>
-                    <button
-                      onClick={() => handleReviewLeave(l.id, 'Approved')}
-                      disabled={isSubmitting}
-                      className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/30 flex items-center gap-1.5"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Approve Leave
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}
@@ -260,72 +265,72 @@ export default function RequestCenterView({
       )}
 
       {/* New Leave Application Modal */}
-      {isModalOpen && (
+      {isLeaveModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
-            <div className="p-5 border-b border-slate-800 bg-slate-950 flex items-center justify-between">
-              <h3 className="font-bold text-white text-base">New Leave Application</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="p-4 border-b border-slate-800 bg-slate-950 flex items-center justify-between">
+              <h3 className="font-bold text-white text-sm">Submit New Employee Leave Request</h3>
+              <button onClick={() => setIsLeaveModalOpen(false)} className="text-slate-400 hover:text-white">✕</button>
             </div>
 
-            <form onSubmit={handleCreateLeave} className="p-6 space-y-4 text-xs">
+            <form onSubmit={handleCreateLeaveRequest} className="p-5 space-y-3 text-xs">
               <div>
                 <label className="text-slate-300 block mb-1">Select Employee *</label>
                 <select
-                  required
-                  value={selectedEmpId}
-                  onChange={e => setSelectedEmpId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
+                  value={selectedEmployeeId}
+                  onChange={e => setSelectedEmployeeId(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"
                 >
-                  <option value="">-- Choose Employee --</option>
                   {employees.map(emp => (
                     <option key={emp.id} value={emp.id}>
-                      {emp.name} ({emp.position})
+                      {emp.name} ({emp.department})
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="text-slate-300 block mb-1">Leave Type (Nepal Labor Law) *</label>
+                <label className="text-slate-300 block mb-1">Leave Category</label>
                 <select
                   value={leaveType}
                   onChange={e => setLeaveType(e.target.value as any)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500 font-medium"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"
                 >
-                  <option value="Annual Leave">Annual Leave (Ghar Bida)</option>
-                  <option value="Sick Leave">Sick Leave (Birami Bida)</option>
-                  <option value="Casual Leave">Casual Leave (Parva / Biparitya Bida)</option>
-                  <option value="Festival Leave">Festival Leave (Chhat / Dashain / Tihar Bida)</option>
-                  <option value="Marriage Leave">Marriage Leave (Bibaha Bida)</option>
-                  <option value="Maternity Leave">Maternity Leave (Sutkeri Bida - 98 Days)</option>
-                  <option value="Paternity Leave">Paternity Leave (Sutkeri Syahar Bida - 15 Days)</option>
-                  <option value="Unpaid Leave">Unpaid Leave (Bebefari Bida)</option>
-                  <option value="Official Leave">Official Leave (Kaj Bida)</option>
+                  <option value="Annual Leave">Annual Leave</option>
+                  <option value="Sick Leave">Sick Leave</option>
+                  <option value="Casual">Casual Leave</option>
+                  <option value="Maternity/Paternity">Maternity/Paternity Leave</option>
+                  <option value="Unpaid">Unpaid Leave</option>
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-slate-300 block mb-1">Start Date *</label>
-                  <input
-                    type="date"
-                    required
-                    value={startDate}
-                    onChange={e => setStartDate(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
+                  <label className="text-slate-300 block mb-1">Start Date (BS / AD)</label>
+                  <NepaliDatePicker
+                    value={startDateAD}
+                    onChange={val => setStartDateAD(val)}
                   />
                 </div>
+
                 <div>
-                  <label className="text-slate-300 block mb-1">End Date *</label>
+                  <label className="text-slate-300 block mb-1">End Date (BS / AD)</label>
+                  <NepaliDatePicker
+                    value={endDateAD}
+                    onChange={val => setEndDateAD(val)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-300 block mb-1">Total Days</label>
                   <input
-                    type="date"
-                    required
-                    value={endDate}
-                    onChange={e => setEndDate(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
+                    type="number"
+                    min="1"
+                    value={totalDays}
+                    onChange={e => setTotalDays(Number(e.target.value))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono"
                   />
                 </div>
               </div>
@@ -333,29 +338,28 @@ export default function RequestCenterView({
               <div>
                 <label className="text-slate-300 block mb-1">Reason for Leave *</label>
                 <textarea
+                  rows={2}
                   required
-                  rows={3}
-                  placeholder="Provide brief reason or justification..."
-                  value={reason}
-                  onChange={e => setReason(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
+                  placeholder="State reason for requested leave..."
+                  value={leaveReason}
+                  onChange={e => setLeaveReason(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"
                 />
               </div>
 
-              <div className="pt-3 border-t border-slate-800 flex justify-end gap-3">
+              <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-semibold hover:bg-slate-700"
+                  onClick={() => setIsLeaveModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg"
+                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold"
                 >
-                  Submit Application
+                  Submit Leave Request
                 </button>
               </div>
             </form>

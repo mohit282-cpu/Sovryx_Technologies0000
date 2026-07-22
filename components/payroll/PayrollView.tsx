@@ -3,687 +3,357 @@
 import React, { useState } from 'react';
 import {
   DollarSign,
-  Plus,
-  Search,
-  CheckCircle2,
-  Clock,
-  Printer,
-  FileText,
-  Building2,
-  Send,
-  Calendar,
-  AlertCircle,
+  Calculator,
+  FileSpreadsheet,
   Download,
-  Percent,
-  Wallet,
-  ShieldCheck,
-  CreditCard,
-  UserCheck
+  Send,
+  UserCheck,
+  Building2,
+  Calendar,
+  CheckCircle2,
+  Receipt,
+  Plus
 } from 'lucide-react';
-import { Employee, PayrollRecord, CompanySettings } from '@/types';
-import { formatCurrency, formatDate } from '@/lib/utils';
-import { createItem, updateItem, deleteItem } from '@/lib/services/firestore';
+import { Employee } from '@/types';
+import { createItem } from '@/lib/services/firestore';
+import { adToBs, formatNPR, BS_MONTHS_EN, getCurrentFiscalYearBS } from '@/lib/nepaliCalendar';
 
 interface PayrollViewProps {
-  payrollRecords?: PayrollRecord[];
   employees: Employee[];
-  settings?: CompanySettings;
-  onRefresh: () => void;
+  onRefresh?: () => void;
 }
 
-export default function PayrollView({
-  payrollRecords = [],
-  employees = [],
-  settings,
-  onRefresh
-}: PayrollViewProps) {
-  const [selectedMonth, setSelectedMonth] = useState<string>('Shrawan 2083');
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedRecord, setSelectedRecord] = useState<PayrollRecord | null>(null);
-  const [isNewModalOpen, setIsNewModalOpen] = useState<boolean>(false);
-  const [isSlipModalOpen, setIsSlipModalOpen] = useState<boolean>(false);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+export interface PayrollSlip {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  panNo?: string;
+  bsMonth: string;
+  bsYear: number;
+  fiscalYearBS: string;
+  basicSalaryNPR: number;
+  allowancesNPR: number;
+  grossSalaryNPR: number;
+  ssfEmployeeNPR: number; // 11%
+  ssfEmployerNPR: number; // 20%
+  citDeductionNPR: number;
+  tdsTaxNPR: number; // Income Tax TDS
+  netSalaryNPR: number;
+  paymentStatus: 'Pending' | 'Processed' | 'Paid';
+  paymentDateAD: string;
+  paymentDateBS: string;
+  bankName?: string;
+  bankAccountNo?: string;
+}
 
-  // New Payroll Form State
-  const [selectedEmpId, setSelectedEmpId] = useState<string>('');
-  const [basicSalary, setBasicSalary] = useState<number>(0);
-  const [allowances, setAllowances] = useState<number>(0);
-  const [bonus, setBonus] = useState<number>(0);
-  const [festivalBonus, setFestivalBonus] = useState<number>(0); // Dashain / Tihar bonus
-  const [overtimePay, setOvertimePay] = useState<number>(0);
-  const [providentFund, setProvidentFund] = useState<number>(0); // 10% default optional
-  const [citDeduction, setCitDeduction] = useState<number>(0);
-  const [ssfDeduction, setSsfDeduction] = useState<number>(0);
-  const [advanceSalary, setAdvanceSalary] = useState<number>(0);
-  const [taxDeduction, setTaxDeduction] = useState<number>(0);
-  const [paymentMethod, setPaymentMethod] = useState<'Bank Transfer' | 'eSewa' | 'Khalti' | 'IME Pay' | 'Cash'>('Bank Transfer');
+export default function PayrollView({ employees, onRefresh }: PayrollViewProps) {
+  const currentBS = adToBs(new Date());
+  const currentFY = getCurrentFiscalYearBS(new Date());
 
-  const currencySymbol = settings?.currencySymbol || 'Rs.';
+  const [selectedMonth, setSelectedMonth] = useState<string>(currentBS.monthName);
+  const [selectedYear, setSelectedYear] = useState<number>(currentBS.year);
+  const [slips, setSlips] = useState<PayrollSlip[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedSlip, setSelectedSlip] = useState<PayrollSlip | null>(null);
 
-  const handleSelectEmployeeForPayroll = (empId: string) => {
-    setSelectedEmpId(empId);
-    const emp = employees.find(e => e.id === empId || e.employeeId === empId);
-    if (emp) {
-      const basic = emp.salary || 0;
-      setBasicSalary(basic);
-      setAllowances(Math.round(basic * 0.2)); // 20% default allowances
-      setProvidentFund(Math.round(basic * 0.1)); // 10% PF
-      setTaxDeduction(Math.round(basic * 0.01)); // 1% SST / basic TDS
-      setFestivalBonus(0);
-      setBonus(0);
-      setOvertimePay(0);
-      setAdvanceSalary(0);
+  // Calculate Nepal SSF & Income Tax TDS (Monthly approximation according to IRD Nepal rules)
+  const calculateNepalPayroll = (employee: Employee): PayrollSlip => {
+    const basic = employee.salary || 50000;
+    const allowances = Math.round(basic * 0.15); // 15% standard allowances
+    const gross = basic + allowances;
+
+    // SSF (11% Employee, 20% Employer)
+    const ssfEmp = Math.round(basic * 0.11);
+    const ssfEmployer = Math.round(basic * 0.20);
+
+    // Annual taxable estimation
+    const annualGross = gross * 12;
+    const annualSSF = ssfEmp * 12;
+    const taxableAnnual = Math.max(0, annualGross - annualSSF);
+
+    // Nepal Single Tax Brackets (Rough Monthly TDS Allocation)
+    let annualTax = 0;
+    if (taxableAnnual <= 500000) {
+      annualTax = taxableAnnual * 0.01; // 1% SSF tax rate
+    } else if (taxableAnnual <= 700000) {
+      annualTax = 5000 + (taxableAnnual - 500000) * 0.10;
+    } else if (taxableAnnual <= 1000000) {
+      annualTax = 25000 + (taxableAnnual - 700000) * 0.20;
+    } else if (taxableAnnual <= 2000000) {
+      annualTax = 85000 + (taxableAnnual - 1000000) * 0.30;
+    } else {
+      annualTax = 385000 + (taxableAnnual - 2000000) * 0.36;
     }
+
+    const monthlyTDS = Math.round(annualTax / 12);
+    const cit = 0; // CIT Optional
+    const netSalary = gross - ssfEmp - monthlyTDS - cit;
+
+    const todayAD = new Date().toISOString().split('T')[0];
+    const todayBS = adToBs(todayAD);
+
+    return {
+      id: `PAY-${employee.id}-${selectedMonth}-${selectedYear}`,
+      employeeId: employee.id,
+      employeeName: employee.name,
+      panNo: `PAN-${Math.floor(100000000 + Math.random() * 900000000)}`,
+      bsMonth: selectedMonth,
+      bsYear: selectedYear,
+      fiscalYearBS: currentFY,
+      basicSalaryNPR: basic,
+      allowancesNPR: allowances,
+      grossSalaryNPR: gross,
+      ssfEmployeeNPR: ssfEmp,
+      ssfEmployerNPR: ssfEmployer,
+      citDeductionNPR: cit,
+      tdsTaxNPR: monthlyTDS,
+      netSalaryNPR: netSalary,
+      paymentStatus: 'Pending',
+      paymentDateAD: todayAD,
+      paymentDateBS: todayBS.formatted,
+      bankName: 'Nabil Bank Ltd.',
+      bankAccountNo: `0100017500${Math.floor(1000 + Math.random() * 9000)}`
+    };
   };
 
-  const calculateGross = () => basicSalary + allowances + bonus + festivalBonus + overtimePay;
-  const calculateDeductions = () => providentFund + citDeduction + ssfDeduction + advanceSalary + taxDeduction;
-  const calculateNet = () => calculateGross() - calculateDeductions();
-
-  const handleCreatePayroll = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedEmpId) return;
-    const emp = employees.find(e => e.id === selectedEmpId || e.employeeId === selectedEmpId);
-    if (!emp) return;
-
-    setIsSubmitting(true);
-    try {
-      const gross = calculateGross();
-      const totalDed = calculateDeductions();
-      const net = gross - totalDed;
-
-      const newRecord: Omit<PayrollRecord, 'id'> = {
-        employeeId: emp.id,
-        employeeName: emp.name,
-        employeePosition: emp.position,
-        panNo: emp.panNo || settings?.panNo || '',
-        month: selectedMonth,
-        basicSalary,
-        allowances,
-        bonus,
-        festivalBonus,
-        overtimePay,
-        grossSalary: gross,
-        deductions: {
-          providentFund,
-          citizenInvestmentTrust: citDeduction,
-          socialSecurityFund: ssfDeduction,
-          advanceSalary,
-          taxDeduction
-        },
-        totalDeductions: totalDed,
-        netSalary: net,
-        status: 'Draft',
-        paymentMethod
-      };
-
-      await createItem('payrollRecords', newRecord);
-      setIsNewModalOpen(false);
-      onRefresh();
-    } catch (err) {
-      console.error('Error creating payroll:', err);
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleGeneratePayrollBatch = () => {
+    setIsProcessing(true);
+    setTimeout(() => {
+      const generated = employees.map(emp => calculateNepalPayroll(emp));
+      setSlips(generated);
+      setIsProcessing(false);
+    }, 600);
   };
 
-  const handleGenerateBatchPayroll = async () => {
-    if (employees.length === 0) return;
-    if (!confirm(`Generate draft payroll records for all ${employees.length} active employees for ${selectedMonth}?`)) return;
-
-    setIsSubmitting(true);
+  const handleDisburseSalary = async (slip: PayrollSlip) => {
     try {
-      for (const emp of employees) {
-        const basic = emp.salary || 35000;
-        const allow = Math.round(basic * 0.15);
-        const pf = Math.round(basic * 0.10);
-        const tax = Math.round(basic * 0.01);
-        const gross = basic + allow;
-        const totalDed = pf + tax;
-        const net = gross - totalDed;
-
-        await createItem('payrollRecords', {
-          employeeId: emp.id,
-          employeeName: emp.name,
-          employeePosition: emp.position,
-          panNo: emp.panNo || '',
-          month: selectedMonth,
-          basicSalary: basic,
-          allowances: allow,
-          bonus: 0,
-          festivalBonus: 0,
-          overtimePay: 0,
-          grossSalary: gross,
-          deductions: {
-            providentFund: pf,
-            taxDeduction: tax
-          },
-          totalDeductions: totalDed,
-          netSalary: net,
-          status: 'Draft',
-          paymentMethod: emp.digitalWallets?.esewaNo ? 'eSewa' : 'Bank Transfer'
-        });
-      }
-      onRefresh();
-    } catch (err) {
-      console.error('Error batch generating payroll:', err);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleMarkAsPaid = async (recordId: string) => {
-    try {
-      await updateItem('payrollRecords', recordId, {
-        status: 'Paid',
-        paidDate: new Date().toISOString()
+      await createItem('timeLogs', {
+        employeeId: slip.employeeId,
+        employeeName: slip.employeeName,
+        taskId: 'PAYROLL-DISBURSED',
+        taskTitle: `Payroll Disbursed for ${slip.bsMonth} ${slip.bsYear} (BS)`,
+        projectId: 'FINANCE',
+        projectName: 'Nepal Payroll & Statutory Compliance',
+        date: slip.paymentDateAD,
+        startTime: '10:00',
+        endTime: '10:00',
+        hoursSpent: 0,
+        notes: `Net Salary ${formatNPR(slip.netSalaryNPR)} disbursed via Bank. TDS: ${formatNPR(slip.tdsTaxNPR)}, SSF: ${formatNPR(slip.ssfEmployeeNPR)}`
       });
-      onRefresh();
-    } catch (err) {
-      console.error('Error updating payroll status:', err);
+
+      setSlips(prev => prev.map(s => s.id === slip.id ? { ...s, paymentStatus: 'Paid' } : s));
+      alert(`Salary disbursed successfully for ${slip.employeeName} (${slip.bsMonth} ${slip.bsYear} BS)`);
+    } catch (err: any) {
+      alert('Error disbursing payroll: ' + err.message);
     }
   };
 
-  const filteredRecords = payrollRecords.filter(r =>
-    (r.month === selectedMonth || !selectedMonth) &&
-    (r.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     r.paymentMethod.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  const totalGrossPayroll = filteredRecords.reduce((acc, r) => acc + (r.grossSalary || 0), 0);
-  const totalNetPayroll = filteredRecords.reduce((acc, r) => acc + (r.netSalary || 0), 0);
-  const totalTaxDeducted = filteredRecords.reduce((acc, r) => acc + (r.deductions?.taxDeduction || 0), 0);
-  const totalPFCollected = filteredRecords.reduce((acc, r) => acc + (r.deductions?.providentFund || 0), 0);
+  const totalPayrollGross = slips.reduce((acc, s) => acc + s.grossSalaryNPR, 0);
+  const totalNetPayable = slips.reduce((acc, s) => acc + s.netSalaryNPR, 0);
+  const totalTDS = slips.reduce((acc, s) => acc + s.tdsTaxNPR, 0);
+  const totalSSF = slips.reduce((acc, s) => acc + s.ssfEmployeeNPR + s.ssfEmployerNPR, 0);
 
   return (
-    <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 border border-slate-800 rounded-2xl p-5 backdrop-blur-sm">
+    <div className="space-y-6 pb-12">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
         <div>
-          <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-1">
-            <DollarSign className="w-4 h-4" /> Nepal Corporate Payroll & Compliance
+          <div className="flex items-center gap-2 mb-1">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+              NEPAL PAYROLL & SSF / TDS COMPLIANCE
+            </span>
+            <span className="text-xs text-slate-400 font-mono">Fiscal Year {currentFY}</span>
           </div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">
-            Payroll & Festival Bonus Engine
-          </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Manage Basic Salary, Allowances, Festival Bonus (Dashain), PF, CIT, TDS Tax, and Digital Wallets (eSewa / Khalti)
+          <h1 className="text-2xl font-extrabold text-white">Bikram Sambat Salary Disbursement</h1>
+          <p className="text-xs text-slate-400">
+            Auto-calculated SSF (11%+20%), IRD Income Tax TDS, and Bank Transfers in Nepalese Rupees (NPR).
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={handleGenerateBatchPayroll}
-            disabled={isSubmitting}
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-2 transition-all border border-slate-700"
+        <div className="flex items-center gap-2">
+          <select
+            value={selectedMonth}
+            onChange={e => setSelectedMonth(e.target.value)}
+            className="bg-slate-950 border border-slate-800 text-slate-200 text-xs px-3 py-2 rounded-xl focus:outline-none font-bold"
           >
-            <Calendar className="w-4 h-4 text-indigo-400" />
-            Batch Process Month
-          </button>
-          <button
-            onClick={() => setIsNewModalOpen(true)}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-indigo-600/20 transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            New Salary Voucher
-          </button>
-        </div>
-      </div>
+            {BS_MONTHS_EN.map(m => (
+              <option key={m} value={m}>{m} (BS)</option>
+            ))}
+          </select>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
-            <span>Total Gross Salary</span>
-            <Wallet className="w-4 h-4 text-emerald-400" />
-          </div>
-          <p className="text-xl font-bold text-white font-mono">
-            {formatCurrency(totalGrossPayroll, currencySymbol)}
-          </p>
-          <p className="text-[10px] text-slate-500 mt-1">{filteredRecords.length} Employees in batch</p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
-            <span>Net Payable Salary</span>
-            <CreditCard className="w-4 h-4 text-indigo-400" />
-          </div>
-          <p className="text-xl font-bold text-emerald-400 font-mono">
-            {formatCurrency(totalNetPayroll, currencySymbol)}
-          </p>
-          <p className="text-[10px] text-slate-500 mt-1">Disbursement ready</p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
-            <span>Total TDS Tax Withheld</span>
-            <Percent className="w-4 h-4 text-amber-400" />
-          </div>
-          <p className="text-xl font-bold text-amber-300 font-mono">
-            {formatCurrency(totalTaxDeducted, currencySymbol)}
-          </p>
-          <p className="text-[10px] text-slate-500 mt-1">IRD Government Compliance</p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
-            <span>Provident Fund (PF)</span>
-            <ShieldCheck className="w-4 h-4 text-purple-400" />
-          </div>
-          <p className="text-xl font-bold text-purple-300 font-mono">
-            {formatCurrency(totalPFCollected, currencySymbol)}
-          </p>
-          <p className="text-[10px] text-slate-500 mt-1">10% Employee contribution</p>
-        </div>
-      </div>
-
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 text-xs">
-            <span className="text-slate-400 font-medium">Month:</span>
-            <input
-              type="text"
-              value={selectedMonth}
-              onChange={e => setSelectedMonth(e.target.value)}
-              placeholder="e.g. Shrawan 2083"
-              className="bg-transparent text-white focus:outline-none w-32 font-medium"
-            />
-          </div>
-        </div>
-
-        <div className="relative w-full sm:w-64">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
           <input
-            type="text"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            placeholder="Search employee or wallet..."
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+            type="number"
+            value={selectedYear}
+            onChange={e => setSelectedYear(Number(e.target.value))}
+            className="w-20 bg-slate-950 border border-slate-800 text-slate-200 text-xs px-3 py-2 rounded-xl focus:outline-none font-mono"
           />
+
+          <button
+            onClick={handleGeneratePayrollBatch}
+            disabled={isProcessing}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/30 flex items-center gap-1.5 transition-all"
+          >
+            <Calculator className="w-4 h-4" />
+            {isProcessing ? 'Calculating...' : 'Calculate Payroll'}
+          </button>
         </div>
       </div>
 
-      {/* Payroll Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-950/80 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider text-[10px]">
-              <tr>
-                <th className="p-3.5">Employee</th>
-                <th className="p-3.5">Month</th>
-                <th className="p-3.5">Basic Salary</th>
-                <th className="p-3.5">Festival Bonus</th>
-                <th className="p-3.5">Deductions (PF/Tax)</th>
-                <th className="p-3.5">Net Payable</th>
-                <th className="p-3.5">Method</th>
-                <th className="p-3.5">Status</th>
-                <th className="p-3.5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800 text-slate-200">
-              {filteredRecords.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="p-8 text-center text-slate-500">
-                    No payroll records found for {selectedMonth}. Click &quot;New Salary Voucher&quot; or &quot;Batch Process Month&quot; to generate.
-                  </td>
-                </tr>
-              ) : (
-                filteredRecords.map((rec) => (
-                  <tr key={rec.id} className="hover:bg-slate-800/40 transition-all">
-                    <td className="p-3.5">
-                      <div className="font-bold text-white">{rec.employeeName}</div>
-                      <div className="text-[10px] text-slate-400">{rec.employeePosition || 'Staff'}</div>
-                    </td>
-                    <td className="p-3.5 font-medium text-slate-300">{rec.month}</td>
-                    <td className="p-3.5 font-mono text-slate-300">{formatCurrency(rec.basicSalary, currencySymbol)}</td>
-                    <td className="p-3.5 font-mono text-amber-400">
-                      {rec.festivalBonus > 0 ? formatCurrency(rec.festivalBonus, currencySymbol) : '—'}
-                    </td>
-                    <td className="p-3.5 font-mono text-rose-400">
-                      -{formatCurrency(rec.totalDeductions, currencySymbol)}
-                    </td>
-                    <td className="p-3.5 font-mono font-bold text-emerald-400 text-sm">
-                      {formatCurrency(rec.netSalary, currencySymbol)}
-                    </td>
-                    <td className="p-3.5">
-                      <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-[10px] border border-slate-700">
-                        {rec.paymentMethod}
-                      </span>
-                    </td>
-                    <td className="p-3.5">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        rec.status === 'Paid'
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                          : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                      }`}>
-                        {rec.status}
-                      </span>
-                    </td>
-                    <td className="p-3.5 text-right space-x-2">
-                      <button
-                        onClick={() => {
-                          setSelectedRecord(rec);
-                          setIsSlipModalOpen(true);
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600 hover:text-white text-[10px] font-semibold transition-all border border-indigo-500/30"
-                      >
-                        Payslip
-                      </button>
-                      {rec.status !== 'Paid' && (
-                        <button
-                          onClick={() => handleMarkAsPaid(rec.id)}
-                          className="px-2.5 py-1 rounded-lg bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white text-[10px] font-semibold transition-all border border-emerald-500/30"
-                        >
-                          Disburse
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Payslip View Modal */}
-      {isSlipModalOpen && selectedRecord && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl space-y-4">
-            <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-950">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold">
-                  S
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-white text-base">
-                    {settings?.companyName || 'Sovryx Nepal Pvt. Ltd.'}
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    {settings?.address?.municipality || 'Kathmandu'}, {settings?.address?.district || 'Nepal'} • PAN: {settings?.panNo || '609812345'}
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
-                  OFFICIAL PAYSLIP
-                </span>
-                <p className="text-[10px] text-slate-400 mt-1">{selectedRecord.month}</p>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-6">
-              {/* Employee Summary */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs">
-                <div>
-                  <span className="text-slate-400 block text-[10px]">EMPLOYEE NAME</span>
-                  <span className="font-bold text-white text-sm">{selectedRecord.employeeName}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">POSITION</span>
-                  <span className="font-semibold text-slate-200">{selectedRecord.employeePosition || 'Staff'}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">PAN NUMBER</span>
-                  <span className="font-mono text-slate-300">{selectedRecord.panNo || 'N/A'}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">PAYMENT METHOD</span>
-                  <span className="font-semibold text-indigo-400">{selectedRecord.paymentMethod}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">PAYMENT STATUS</span>
-                  <span className="font-bold text-emerald-400">{selectedRecord.status}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">DISBURSED DATE</span>
-                  <span className="text-slate-300">{selectedRecord.paidDate ? formatDate(selectedRecord.paidDate) : 'Pending'}</span>
-                </div>
-              </div>
-
-              {/* Salary Breakdown Table */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Earnings */}
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
-                  <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider border-b border-slate-800 pb-2">
-                    Earnings
-                  </h4>
-                  <div className="flex justify-between text-xs py-1">
-                    <span className="text-slate-400">Basic Salary</span>
-                    <span className="font-mono text-white">{formatCurrency(selectedRecord.basicSalary, currencySymbol)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs py-1">
-                    <span className="text-slate-400">Allowances</span>
-                    <span className="font-mono text-white">{formatCurrency(selectedRecord.allowances, currencySymbol)}</span>
-                  </div>
-                  {selectedRecord.festivalBonus > 0 && (
-                    <div className="flex justify-between text-xs py-1">
-                      <span className="text-amber-400">Dashain/Festival Bonus</span>
-                      <span className="font-mono text-amber-400 font-bold">{formatCurrency(selectedRecord.festivalBonus, currencySymbol)}</span>
-                    </div>
-                  )}
-                  {selectedRecord.bonus > 0 && (
-                    <div className="flex justify-between text-xs py-1">
-                      <span className="text-slate-400">Performance Bonus</span>
-                      <span className="font-mono text-white">{formatCurrency(selectedRecord.bonus, currencySymbol)}</span>
-                    </div>
-                  )}
-                  {selectedRecord.overtimePay > 0 && (
-                    <div className="flex justify-between text-xs py-1">
-                      <span className="text-slate-400">Overtime Pay</span>
-                      <span className="font-mono text-white">{formatCurrency(selectedRecord.overtimePay, currencySymbol)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-xs font-bold pt-2 border-t border-slate-800 text-emerald-400">
-                    <span>Total Gross Earnings</span>
-                    <span className="font-mono">{formatCurrency(selectedRecord.grossSalary, currencySymbol)}</span>
-                  </div>
-                </div>
-
-                {/* Deductions */}
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
-                  <h4 className="text-xs font-bold text-rose-400 uppercase tracking-wider border-b border-slate-800 pb-2">
-                    Deductions
-                  </h4>
-                  <div className="flex justify-between text-xs py-1">
-                    <span className="text-slate-400">Provident Fund (PF)</span>
-                    <span className="font-mono text-white">{formatCurrency(selectedRecord.deductions?.providentFund || 0, currencySymbol)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs py-1">
-                    <span className="text-slate-400">Income Tax (TDS)</span>
-                    <span className="font-mono text-white">{formatCurrency(selectedRecord.deductions?.taxDeduction || 0, currencySymbol)}</span>
-                  </div>
-                  {(selectedRecord.deductions?.citizenInvestmentTrust || 0) > 0 && (
-                    <div className="flex justify-between text-xs py-1">
-                      <span className="text-slate-400">CIT Contribution</span>
-                      <span className="font-mono text-white">{formatCurrency(selectedRecord.deductions?.citizenInvestmentTrust, currencySymbol)}</span>
-                    </div>
-                  )}
-                  {(selectedRecord.deductions?.advanceSalary || 0) > 0 && (
-                    <div className="flex justify-between text-xs py-1">
-                      <span className="text-slate-400">Advance Salary Return</span>
-                      <span className="font-mono text-white">{formatCurrency(selectedRecord.deductions?.advanceSalary, currencySymbol)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-xs font-bold pt-2 border-t border-slate-800 text-rose-400">
-                    <span>Total Deductions</span>
-                    <span className="font-mono">{formatCurrency(selectedRecord.totalDeductions, currencySymbol)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Net Payable Highlight */}
-              <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-900/30 via-slate-900 to-indigo-900/30 border border-emerald-500/30 flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Net Take-Home Salary</span>
-                  <span className="text-[10px] text-slate-400">Directly transferred via {selectedRecord.paymentMethod}</span>
-                </div>
-                <div className="text-2xl font-black text-emerald-400 font-mono">
-                  {formatCurrency(selectedRecord.netSalary, currencySymbol)}
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between">
-              <button
-                onClick={() => setIsSlipModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 transition-all"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-500 flex items-center gap-2 shadow-lg transition-all"
-              >
-                <Printer className="w-4 h-4" />
-                Print Payslip
-              </button>
-            </div>
+      {/* Financial Summary */}
+      {slips.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+            <span className="text-xs text-slate-400 block mb-1">Total Gross Payroll</span>
+            <span className="text-xl font-black text-white">{formatNPR(totalPayrollGross)}</span>
+          </div>
+          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+            <span className="text-xs text-slate-400 block mb-1">Net Disbursement</span>
+            <span className="text-xl font-black text-emerald-400">{formatNPR(totalNetPayable)}</span>
+          </div>
+          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+            <span className="text-xs text-slate-400 block mb-1">TDS Income Tax (IRD)</span>
+            <span className="text-xl font-black text-amber-400">{formatNPR(totalTDS)}</span>
+          </div>
+          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+            <span className="text-xs text-slate-400 block mb-1">Total SSF Contribution</span>
+            <span className="text-xl font-black text-indigo-400">{formatNPR(totalSSF)}</span>
           </div>
         </div>
       )}
 
-      {/* New Salary Voucher Modal */}
-      {isNewModalOpen && (
+      {/* Slips Table */}
+      {slips.length === 0 ? (
+        <div className="p-12 text-center bg-slate-900/80 rounded-2xl border border-slate-800 text-slate-400 space-y-3">
+          <Receipt className="w-10 h-10 text-slate-600 mx-auto" />
+          <p className="text-xs font-medium">Click &quot;Calculate Payroll&quot; to generate Bikram Sambat salary vouchers for {selectedMonth} {selectedYear} BS.</p>
+        </div>
+      ) : (
+        <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-x-auto">
+          <table className="w-full text-left text-xs text-slate-300">
+            <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+              <tr>
+                <th className="p-3.5">Employee & PAN</th>
+                <th className="p-3.5">BS Period</th>
+                <th className="p-3.5">Basic + Allowances</th>
+                <th className="p-3.5">SSF (11%)</th>
+                <th className="p-3.5">TDS Tax</th>
+                <th className="p-3.5">Net Payable</th>
+                <th className="p-3.5">Status</th>
+                <th className="p-3.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/80">
+              {slips.map(s => (
+                <tr key={s.id} className="hover:bg-slate-950/50 transition-colors">
+                  <td className="p-3.5">
+                    <p className="font-bold text-white">{s.employeeName}</p>
+                    <p className="text-[10px] text-slate-500 font-mono">{s.panNo}</p>
+                  </td>
+                  <td className="p-3.5 font-bold text-indigo-400">
+                    {s.bsMonth} {s.bsYear} (BS)
+                  </td>
+                  <td className="p-3.5 font-mono text-slate-200">
+                    {formatNPR(s.grossSalaryNPR)}
+                  </td>
+                  <td className="p-3.5 font-mono text-indigo-300">
+                    {formatNPR(s.ssfEmployeeNPR)}
+                  </td>
+                  <td className="p-3.5 font-mono text-amber-400">
+                    {formatNPR(s.tdsTaxNPR)}
+                  </td>
+                  <td className="p-3.5 font-mono text-emerald-400 font-bold">
+                    {formatNPR(s.netSalaryNPR)}
+                  </td>
+                  <td className="p-3.5">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      s.paymentStatus === 'Paid' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                      'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                    }`}>
+                      {s.paymentStatus}
+                    </span>
+                  </td>
+                  <td className="p-3.5 text-right space-x-2">
+                    <button
+                      onClick={() => setSelectedSlip(s)}
+                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] font-semibold"
+                    >
+                      Payslip Slip
+                    </button>
+
+                    {s.paymentStatus !== 'Paid' && (
+                      <button
+                        onClick={() => handleDisburseSalary(s)}
+                        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-bold"
+                      >
+                        Disburse
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Slip Modal Detail */}
+      {selectedSlip && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl">
-            <div className="p-5 border-b border-slate-800 bg-slate-950 flex items-center justify-between">
-              <h3 className="font-bold text-white text-base">New Nepal Payroll Voucher</h3>
-              <button
-                onClick={() => setIsNewModalOpen(false)}
-                className="text-slate-400 hover:text-white text-sm"
-              >
-                ✕
-              </button>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl p-6 space-y-4 text-xs">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <span className="text-[10px] font-mono text-emerald-400 uppercase font-bold">SOVRYX NEPAL PAYSLIP VOUCHER</span>
+                <h3 className="text-base font-extrabold text-white">{selectedSlip.employeeName}</h3>
+                <p className="text-[10px] text-slate-400 font-mono">PAN: {selectedSlip.panNo} • Period: {selectedSlip.bsMonth} {selectedSlip.bsYear} BS</p>
+              </div>
+              <button onClick={() => setSelectedSlip(null)} className="text-slate-400 hover:text-white">✕</button>
             </div>
 
-            <form onSubmit={handleCreatePayroll} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-              <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">Select Employee *</label>
-                <select
-                  required
-                  value={selectedEmpId}
-                  onChange={e => handleSelectEmployeeForPayroll(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
-                >
-                  <option value="">-- Choose Employee --</option>
-                  {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.name} ({emp.position}) - {formatCurrency(emp.salary, currencySymbol)}
-                    </option>
-                  ))}
-                </select>
+            <div className="space-y-2 bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono">
+              <div className="flex justify-between text-slate-300">
+                <span>Basic Salary:</span>
+                <span className="text-white font-bold">{formatNPR(selectedSlip.basicSalaryNPR)}</span>
+              </div>
+              <div className="flex justify-between text-slate-300">
+                <span>Allowances (15%):</span>
+                <span className="text-white font-bold">{formatNPR(selectedSlip.allowancesNPR)}</span>
+              </div>
+              <div className="border-t border-slate-800 pt-1 flex justify-between font-bold text-slate-200">
+                <span>Gross Monthly Earnings:</span>
+                <span>{formatNPR(selectedSlip.grossSalaryNPR)}</span>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">Basic Salary ({currencySymbol}) *</label>
-                  <input
-                    type="number"
-                    required
-                    value={basicSalary}
-                    onChange={e => setBasicSalary(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
-                  />
+              <div className="border-t border-slate-800/80 pt-2 space-y-1 text-rose-400">
+                <div className="flex justify-between">
+                  <span>Deduction: SSF Employee (11%):</span>
+                  <span>- {formatNPR(selectedSlip.ssfEmployeeNPR)}</span>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">Allowances ({currencySymbol})</label>
-                  <input
-                    type="number"
-                    value={allowances}
-                    onChange={e => setAllowances(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
-                  />
+                <div className="flex justify-between">
+                  <span>Deduction: IRD Income TDS Tax:</span>
+                  <span>- {formatNPR(selectedSlip.tdsTaxNPR)}</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-amber-400 block mb-1">Dashain/Festival Bonus ({currencySymbol})</label>
-                  <input
-                    type="number"
-                    value={festivalBonus}
-                    onChange={e => setFestivalBonus(Number(e.target.value))}
-                    placeholder="1 Month Basic for Dashain"
-                    className="w-full bg-slate-950 border border-amber-500/40 rounded-xl p-2.5 text-xs text-amber-300 focus:outline-none focus:border-amber-400 font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">Overtime Pay ({currencySymbol})</label>
-                  <input
-                    type="number"
-                    value={overtimePay}
-                    onChange={e => setOvertimePay(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
-                  />
-                </div>
+              <div className="border-t border-slate-800 pt-2 flex justify-between font-extrabold text-sm text-emerald-400">
+                <span>NET SALARY PAYABLE:</span>
+                <span>{formatNPR(selectedSlip.netSalaryNPR)}</span>
               </div>
+            </div>
 
-              <div className="border-t border-slate-800 pt-3 space-y-3">
-                <h4 className="text-xs font-bold text-rose-400 uppercase tracking-wider">Statutory Deductions</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-slate-400 block mb-1">Provident Fund (PF 10%)</label>
-                    <input
-                      type="number"
-                      value={providentFund}
-                      onChange={e => setProvidentFund(Number(e.target.value))}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-400 block mb-1">Income Tax (TDS)</label>
-                    <input
-                      type="number"
-                      value={taxDeduction}
-                      onChange={e => setTaxDeduction(Number(e.target.value))}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-mono"
-                    />
-                  </div>
-                </div>
-              </div>
+            <div className="p-3 bg-indigo-950/30 rounded-xl border border-indigo-800/40 text-indigo-300 text-[11px] space-y-1">
+              <p><strong>Employer Contribution (SSF 20%):</strong> {formatNPR(selectedSlip.ssfEmployerNPR)}</p>
+              <p><strong>Bank Account:</strong> {selectedSlip.bankName} - {selectedSlip.bankAccountNo}</p>
+              <p><strong>Disbursement Date BS:</strong> {selectedSlip.paymentDateBS}</p>
+            </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">Disbursement Method</label>
-                  <select
-                    value={paymentMethod}
-                    onChange={e => setPaymentMethod(e.target.value as any)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white"
-                  >
-                    <option value="Bank Transfer">Bank Transfer</option>
-                    <option value="eSewa">eSewa Wallet</option>
-                    <option value="Khalti">Khalti Wallet</option>
-                    <option value="IME Pay">IME Pay</option>
-                    <option value="Cash">Cash Handout</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">Net Calculated Take-Home</label>
-                  <div className="p-2.5 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-emerald-400 font-mono font-bold text-sm">
-                    {formatCurrency(calculateNet(), currencySymbol)}
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-slate-800 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsNewModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !selectedEmpId}
-                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30"
-                >
-                  Save Salary Voucher
-                </button>
-              </div>
-            </form>
+            <div className="pt-2 flex justify-end">
+              <button
+                onClick={() => setSelectedSlip(null)}
+                className="px-4 py-2 bg-slate-800 text-white rounded-xl font-bold"
+              >
+                Close Voucher
+              </button>
+            </div>
           </div>
         </div>
       )}

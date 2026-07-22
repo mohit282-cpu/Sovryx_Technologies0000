@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { UserCheck, Plus, Search, DollarSign, Mail, Phone, Briefcase, X } from 'lucide-react';
 import { Client } from '@/types';
 import { createItem, deleteItem } from '@/lib/services/firestore';
+import { formatNPR } from '@/lib/nepaliCalendar';
 
 interface ClientViewProps {
   clients: Client[];
@@ -124,8 +125,8 @@ export default function ClientView({ clients, onRefresh }: ClientViewProps) {
 
             <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Total Spend</span>
-                <span className="font-extrabold text-emerald-400">${c.totalSpent?.toLocaleString()}</span>
+                <span className="text-slate-400">Total Spend (NPR)</span>
+                <span className="font-extrabold text-emerald-400">{formatNPR(c.totalSpent)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Active Projects</span>

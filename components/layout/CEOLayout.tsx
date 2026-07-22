@@ -15,9 +15,9 @@ import StrategicPlanningView from '../strategy/StrategicPlanningView';
 import DecisionLogView from '../decisions/DecisionLogView';
 import RequestCenterView from '../requests/RequestCenterView';
 import EmployeePortalView from '../portal/EmployeePortalView';
+import PayrollView from '../payroll/PayrollView';
 
 import EmployeeView from '../employees/EmployeeView';
-import PayrollView from '../payroll/PayrollView';
 import ProjectView from '../projects/ProjectView';
 import TaskView from '../tasks/TaskView';
 import PerformanceView from '../performance/PerformanceView';
@@ -46,7 +46,6 @@ import {
   CEODecision,
   LeaveRequest,
   EmployeeRequest,
-  PayrollRecord,
   CompanyHealthData
 } from '@/types';
 
@@ -82,7 +81,6 @@ export default function CEOLayout() {
   const [decisions, setDecisions] = useState<CEODecision[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [employeeRequests, setEmployeeRequests] = useState<EmployeeRequest[]>([]);
-  const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
   const [healthData, setHealthData] = useState<CompanyHealthData | undefined>(undefined);
 
   const [initialLoaded, setInitialLoaded] = useState(false);
@@ -106,7 +104,6 @@ export default function CEOLayout() {
     const unsub14 = subscribeCollection<LeaveRequest>('leaveRequests', (data) => setLeaveRequests(data));
     const unsub15 = subscribeCollection<EmployeeRequest>('employeeRequests', (data) => setEmployeeRequests(data));
     const unsub16 = subscribeCollection<CompanyHealthData>('companyHealth', (data) => setHealthData(data[0]));
-    const unsub17 = subscribeCollection<PayrollRecord>('payrollRecords', (data) => setPayrollRecords(data));
 
     getSettings().then((s) => {
       if (s) setSettings(s);
@@ -116,7 +113,7 @@ export default function CEOLayout() {
     return () => {
       unsub1(); unsub2(); unsub3(); unsub4(); unsub5();
       unsub6(); unsub7(); unsub8(); unsub9(); unsub10();
-      unsub11(); unsub12(); unsub13(); unsub14(); unsub15(); unsub16(); unsub17();
+      unsub11(); unsub12(); unsub13(); unsub14(); unsub15(); unsub16();
     };
   }, []);
 
@@ -198,7 +195,7 @@ export default function CEOLayout() {
       case 'employees':
         return <EmployeeView employees={employees} onRefresh={refreshData} />;
       case 'payroll':
-        return <PayrollView payrollRecords={payrollRecords} employees={employees} settings={settings} onRefresh={refreshData} />;
+        return <PayrollView employees={employees} onRefresh={refreshData} />;
       case 'projects':
         return <ProjectView projects={projects} employees={employees} tasks={tasks} onRefresh={refreshData} />;
       case 'tasks':

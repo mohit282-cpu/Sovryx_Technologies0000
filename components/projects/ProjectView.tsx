@@ -23,6 +23,8 @@ import { createItem, updateItem, deleteItem } from '@/lib/services/firestore';
 import { callAI } from '@/lib/aiClient';
 import EmptyState from '@/components/ui/EmptyState';
 import ProjectManager from './ProjectManager';
+import NepaliDatePicker from '@/components/ui/NepaliDatePicker';
+import { adToBs, formatNPR } from '@/lib/nepaliCalendar';
 
 interface ProjectViewProps {
   projects: Project[];
@@ -470,21 +472,19 @@ export default function ProjectView({ projects, employees, tasks, onRefresh }: P
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-slate-300 block mb-1">Total Budget ($)</label>
+                  <label className="text-slate-300 block mb-1">Total Budget (NPR)</label>
                   <input
                     type="number"
                     value={newProject.budget}
                     onChange={e => setNewProject({ ...newProject, budget: Number(e.target.value) })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500 font-mono"
                   />
                 </div>
                 <div>
-                  <label className="text-slate-300 block mb-1">Deadline</label>
-                  <input
-                    type="date"
+                  <label className="text-slate-300 block mb-1">Deadline (BS / AD)</label>
+                  <NepaliDatePicker
                     value={newProject.deadline}
-                    onChange={e => setNewProject({ ...newProject, deadline: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                    onChange={val => setNewProject({ ...newProject, deadline: val })}
                   />
                 </div>
               </div>

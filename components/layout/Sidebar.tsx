@@ -48,9 +48,9 @@ export const NAV_GROUPS = [
     title: 'Workforce & Execution',
     items: [
       { id: 'employees', label: 'Employees', icon: Users },
-      { id: 'payroll', label: 'Payroll & Bonus', icon: DollarSign },
       { id: 'portal', label: 'Employee Portal', icon: User },
       { id: 'requests', label: 'Request Center', icon: Inbox },
+      { id: 'payroll', label: 'Nepal Payroll (BS)', icon: DollarSign },
       { id: 'projects', label: 'Projects & Gantt', icon: Briefcase },
       { id: 'tasks', label: 'Tasks', icon: CheckSquare },
     ]

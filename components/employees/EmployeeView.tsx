@@ -26,6 +26,8 @@ import { Employee } from '@/types';
 import { createItem, updateItem, deleteItem } from '@/lib/services/firestore';
 import { callAI } from '@/lib/aiClient';
 import EmptyState from '@/components/ui/EmptyState';
+import NepaliDatePicker from '@/components/ui/NepaliDatePicker';
+import { adToBs, formatNPR } from '@/lib/nepaliCalendar';
 
 interface EmployeeViewProps {
   employees: Employee[];
@@ -47,19 +49,13 @@ export default function EmployeeView({ employees, onRefresh }: EmployeeViewProps
     phone: '',
     position: '',
     department: 'Engineering',
-    salary: 600000, // NPR per year default
+    salary: 120000,
     skills: 'React, TypeScript, Node.js',
     photo: '',
+    joinDate: new Date().toISOString().split('T')[0],
+    dob: '1995-01-01',
     citizenshipNo: '',
-    citizenshipDistrict: 'Kathmandu',
-    nationalId: '',
-    panNo: '',
-    permanentAddress: 'Kathmandu, Bagmati, Nepal',
-    bankName: 'Nabil Bank Ltd.',
-    bankBranch: 'Maharajgunj Branch',
-    bankAccount: '0101017500001',
-    esewaNo: '',
-    khaltiNo: ''
+    panNo: ''
   });
 
   // Warning modal state
@@ -90,28 +86,11 @@ export default function EmployeeView({ employees, onRefresh }: EmployeeViewProps
         position: newEmp.position,
         department: newEmp.department,
         salary: Number(newEmp.salary),
-        joinDate: new Date().toISOString().split('T')[0],
+        joinDate: newEmp.joinDate,
         status: 'Active',
         skills: skillsArr,
         performanceScore: 85,
         attendanceScore: 90,
-        
-        // Nepal fields
-        citizenshipNo: newEmp.citizenshipNo,
-        citizenshipDistrict: newEmp.citizenshipDistrict,
-        nationalId: newEmp.nationalId,
-        panNo: newEmp.panNo,
-        permanentAddress: newEmp.permanentAddress,
-        bankInfo: newEmp.bankName ? {
-          bankName: newEmp.bankName,
-          branch: newEmp.bankBranch,
-          accountNumber: newEmp.bankAccount
-        } : undefined,
-        digitalWallets: {
-          esewaNo: newEmp.esewaNo,
-          khaltiNo: newEmp.khaltiNo
-        },
-
         warnings: [],
         documents: [],
         notes: [],
@@ -389,8 +368,8 @@ export default function EmployeeView({ employees, onRefresh }: EmployeeViewProps
               {/* Profile Overview */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                  <span className="text-slate-400 block text-[10px]">Annual Salary</span>
-                  <span className="text-sm font-bold text-white">${selectedEmp.salary?.toLocaleString() || '0'}</span>
+                  <span className="text-slate-400 block text-[10px]">Monthly Salary</span>
+                  <span className="text-sm font-bold text-white">{formatNPR(selectedEmp.salary)}</span>
                 </div>
                 <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
                   <span className="text-slate-400 block text-[10px]">Performance</span>
@@ -401,8 +380,9 @@ export default function EmployeeView({ employees, onRefresh }: EmployeeViewProps
                   <span className="text-sm font-bold text-indigo-400">{selectedEmp.attendanceScore}%</span>
                 </div>
                 <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                  <span className="text-slate-400 block text-[10px]">Join Date</span>
-                  <span className="text-xs font-bold text-slate-200">{selectedEmp.joinDate}</span>
+                  <span className="text-slate-400 block text-[10px]">Join Date (BS & AD)</span>
+                  <span className="text-xs font-bold text-emerald-400 block">{adToBs(selectedEmp.joinDate).formatted}</span>
+                  <span className="text-[10px] text-slate-400 font-mono">AD: {selectedEmp.joinDate}</span>
                 </div>
               </div>
 
@@ -592,10 +572,28 @@ export default function EmployeeView({ employees, onRefresh }: EmployeeViewProps
                 <input
                   type="text"
                   required
-                  placeholder="e.g. AI Architect"
+                  placeholder="e.g. Senior Software Engineer"
                   value={newEmp.position}
                   onChange={e => setNewEmp({ ...newEmp, position: e.target.value })}
                   className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-300 block mb-1">Joining Date (BS / AD)</label>
+                <NepaliDatePicker
+                  value={newEmp.joinDate}
+                  onChange={val => setNewEmp({ ...newEmp, joinDate: val })}
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-300 block mb-1">Monthly Basic Salary (NPR)</label>
+                <input
+                  type="number"
+                  value={newEmp.salary}
+                  onChange={e => setNewEmp({ ...newEmp, salary: Number(e.target.value) })}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none font-mono"
                 />
               </div>
 

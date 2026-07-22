@@ -53,6 +53,7 @@ import {
   CompanyHealthData
 } from '@/types';
 import { createItem } from '@/lib/services/firestore';
+import { adToBs, getCurrentFiscalYearBS, formatNPR } from '@/lib/nepaliCalendar';
 import EmptyState from '@/components/ui/EmptyState';
 
 interface CEOCommandCenterProps {
@@ -106,6 +107,8 @@ export default function CEOCommandCenter({
   const atRiskProjects = projects.filter(p => p.status === 'At Risk');
 
   const todayStr = new Date().toISOString().split('T')[0];
+  const todayBS = adToBs(todayStr);
+  const fiscalYearBS = getCurrentFiscalYearBS(todayStr);
   const tasksDueToday = tasks.filter(t => t.deadline === todayStr && t.status !== 'Completed').length;
   const overdueTasks = tasks.filter(t => t.deadline < todayStr && t.status !== 'Completed').length;
 
@@ -246,11 +249,15 @@ export default function CEOCommandCenter({
       {/* CEO Command Center Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-indigo-950/30 to-slate-900 p-6 rounded-2xl border border-indigo-500/20 shadow-2xl">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold">
               SOVEREIGN CEO COMMAND CENTER
             </span>
-            <span className="text-xs text-slate-400 font-mono">Live Firestore Stream</span>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold flex items-center gap-1">
+              <CalendarIcon className="w-3 h-3" />
+              BS: {todayBS.formatted} ({todayBS.strBS}) • FY {fiscalYearBS}
+            </span>
+            <span className="text-xs text-slate-500 font-mono">Live Stream</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             Company Operating Overview
