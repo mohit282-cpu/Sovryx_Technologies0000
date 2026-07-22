@@ -21,6 +21,7 @@ interface HeaderProps {
   notifications: NotificationItem[];
   settings: CompanySettings;
   onOpenAIAssistant: () => void;
+  onOpenWizard?: () => void;
   isMobileOpen: boolean;
   setIsMobileOpen: (open: boolean) => void;
 }
@@ -31,6 +32,7 @@ export default function Header({
   notifications,
   settings,
   onOpenAIAssistant,
+  onOpenWizard,
   isMobileOpen,
   setIsMobileOpen
 }: HeaderProps) {
@@ -111,6 +113,19 @@ export default function Header({
 
       {/* Right Actions */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Setup Wizard Launcher */}
+        {onOpenWizard && (
+          <button
+            id="btn-open-wizard"
+            onClick={onOpenWizard}
+            title="Launch Company Setup Wizard"
+            className="flex items-center gap-1.5 text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded-lg transition-all"
+          >
+            <Building2 className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden md:inline">Setup Wizard</span>
+          </button>
+        )}
+
         {/* Seed Data Button */}
         <button
           id="btn-seed-data"

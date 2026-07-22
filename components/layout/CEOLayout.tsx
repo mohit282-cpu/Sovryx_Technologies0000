@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import AIAssistantDrawer from '../ai/AIAssistantDrawer';
+import CompanySetupWizard from '../onboarding/CompanySetupWizard';
 
 // Module Views
 import DashboardView from '../dashboard/DashboardView';
@@ -44,6 +45,7 @@ export default function CEOLayout() {
   const [currentModule, setCurrentModule] = useState<string>('dashboard');
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isAIOpen, setIsAIOpen] = useState(false);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   // Collections state
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -163,6 +165,7 @@ export default function CEOLayout() {
           notifications={notifications}
           settings={settings}
           onOpenAIAssistant={() => setIsAIOpen(true)}
+          onOpenWizard={() => setIsWizardOpen(true)}
           isMobileOpen={isMobileOpen}
           setIsMobileOpen={setIsMobileOpen}
         />
@@ -186,6 +189,13 @@ export default function CEOLayout() {
         isOpen={isAIOpen}
         onClose={() => setIsAIOpen(false)}
         contextData={{ employees, projects, tasks, performance, attendance }}
+      />
+
+      {/* Company Setup Wizard */}
+      <CompanySetupWizard
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        onComplete={refreshData}
       />
     </div>
   );
