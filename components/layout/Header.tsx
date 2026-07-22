@@ -11,10 +11,13 @@ import {
   Menu,
   X,
   UserCheck,
-  Trash2
+  Trash2,
+  Calendar
 } from 'lucide-react';
 import { NotificationItem, CompanySettings } from '@/types';
 import { seedInitialData, clearDatabaseToZero } from '@/lib/services/firestore';
+import { adToBs, BSDate } from '@/lib/nepaliCalendar';
+import BSCalendarPopover from './BSCalendarPopover';
 
 interface HeaderProps {
   currentModule: string;
@@ -40,7 +43,9 @@ export default function Header({
   const [seeding, setSeeding] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>('');
+  const [showBsCalendar, setShowBsCalendar] = useState(false);
 
+  const todayBS: BSDate = adToBs(new Date());
   const unreadCount = notifications.filter(n => !n.read).length;
 
   useEffect(() => {
@@ -119,16 +124,42 @@ export default function Header({
         </div>
       </div>
 
-      {/* Center: Live Search / Time Badge */}
-      <div className="hidden md:flex items-center gap-3">
-        <div className="text-xs font-mono text-slate-400 bg-slate-900 border border-slate-800/80 px-3 py-1.5 rounded-full flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>{currentTime || 'ONLINE'}</span>
-        </div>
+      {/* Center: Live BS Calendar Badge */}
+      <div className="relative hidden md:flex items-center gap-3">
+        <button
+          id="btn-bs-calendar"
+          type="button"
+          onClick={() => setShowBsCalendar(!showBsCalendar)}
+          className="group text-xs font-mono text-slate-300 bg-slate-900/90 hover:bg-slate-800 border border-slate-800/80 hover:border-indigo-500/50 px-3.5 py-1.5 rounded-full flex items-center gap-2 transition-all shadow-sm hover:shadow-indigo-500/10 cursor-pointer"
+          title="Click to toggle Bikram Sambat (BS) Calendar"
+        >
+          <Calendar className="w-3.5 h-3.5 text-indigo-400 group-hover:scale-110 transition-transform" />
+          <span className="font-semibold text-slate-100">
+            {todayBS.year} {todayBS.monthName} {todayBS.day} (BS)
+          </span>
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-slate-400 text-[11px] font-normal">{currentTime || 'ONLINE'}</span>
+        </button>
+
+        {/* BS Calendar Popover */}
+        <BSCalendarPopover
+          isOpen={showBsCalendar}
+          onClose={() => setShowBsCalendar(false)}
+        />
       </div>
 
       {/* Right Actions */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Mobile BS Calendar Launcher */}
+        <button
+          id="btn-bs-calendar-mobile"
+          type="button"
+          onClick={() => setShowBsCalendar(!showBsCalendar)}
+          className="md:hidden relative p-2 text-indigo-400 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg transition-colors"
+          title="Bikram Sambat Calendar"
+        >
+          <Calendar className="w-4 h-4" />
+        </button>
         {/* AI Co-Pilot Launcher */}
         <button
           id="btn-ai-copilot"

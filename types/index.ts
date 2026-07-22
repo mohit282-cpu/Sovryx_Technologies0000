@@ -1,4 +1,4 @@
-export type EmployeeStatus = 'Active' | 'On Leave' | 'Terminated';
+export type EmployeeStatus = 'Active' | 'On Leave' | 'Terminated' | 'Inactive' | 'Resigned' | 'Probation';
 
 export interface Employee {
   id: string;
@@ -20,7 +20,51 @@ export interface Employee {
   notes: { id: string; date: string; text: string; author: string }[];
   biography?: string;
   emergencyContact?: { name: string; relation: string; phone: string };
+  dob?: string;
+  citizenshipNo?: string;
+  panNo?: string;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  fullName?: string;
+  gender?: string;
+  dobAD?: string;
+  dobBS?: string;
+  age?: number;
+  bloodGroup?: string;
+  maritalStatus?: string;
+  nationality?: string;
+  citizenshipDistrict?: string;
+  nationalId?: string;
+  passportNo?: string;
+  religion?: string;
+  personalEmail?: string;
+  officialEmail?: string;
+  primaryPhone?: string;
+  secondaryPhone?: string;
+  whatsappNumber?: string;
+  permanentAddress?: NepalAddress;
+  temporaryAddress?: NepalAddress;
+  designation?: string;
+  subDepartment?: string;
+  workLocation?: string;
+  employmentType?: string;
+  joinDateBS?: string;
+  probationEndDateAD?: string;
+  probationEndDateBS?: string;
+  managerId?: string;
+  managerName?: string;
+  basicSalaryNPR?: number;
+  allowancesNPR?: number;
+  grade?: string;
+  bankName?: string;
+  bankAccountNo?: string;
+  bankBranch?: string;
+  ssfNo?: string;
+  citNo?: string;
+  epfNo?: string;
   createdAt?: string;
+  [key: string]: any;
 }
 
 export type TaskPriority = 'Low' | 'Medium' | 'High' | 'Urgent';

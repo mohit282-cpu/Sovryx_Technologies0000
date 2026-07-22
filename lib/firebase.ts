@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { getFirestore, Firestore, doc, getDocFromServer } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import firebaseConfigJson from '../firebase-applet-config.json';
 
@@ -21,6 +21,15 @@ export const auth: Auth = getAuth(app);
 const databaseId = firebaseConfigJson.firestoreDatabaseId || '(default)';
 export const db: Firestore = getFirestore(app, databaseId);
 
+// Test Firestore Connection defensively without blocking app execution
+if (typeof window !== 'undefined') {
+  getDocFromServer(doc(db, '_connection_check', 'ping')).catch((error) => {
+    if (error instanceof Error && error.message.includes('offline')) {
+      console.warn('Firestore offline or unreachable, using local cache / fallbacks.');
+    }
+  });
+}
+
 // Initialize Storage with defensive fallback
 let storageInstance: FirebaseStorage | null = null;
 try {
@@ -31,3 +40,4 @@ try {
 export const storage = storageInstance;
 
 export default app;
+

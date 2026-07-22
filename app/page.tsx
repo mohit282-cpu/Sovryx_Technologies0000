@@ -1,7 +1,13 @@
 'use client';
 
 import CEOLayout from '@/components/layout/CEOLayout';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 export default function HomePage() {
-  return <CEOLayout />;
+  return (
+    <ErrorBoundary>
+      <CEOLayout />
+    </ErrorBoundary>
+  );
 }
+
