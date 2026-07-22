@@ -106,7 +106,11 @@ export default function EmployeeView({ employees, onRefresh }: EmployeeViewProps
         department: 'Engineering',
         salary: 120000,
         skills: 'React, TypeScript, Node.js',
-        photo: ''
+        photo: '',
+        joinDate: new Date().toISOString().split('T')[0],
+        dob: '1995-01-01',
+        citizenshipNo: '',
+        panNo: ''
       });
       alert('New Employee Added to Sovryx OS!');
     } catch (err: any) {

@@ -491,4 +491,24 @@ export interface Holiday {
   description?: string;
 }
 
+export interface NepalAddress {
+  province?: string;
+  district?: string;
+  municipality?: string;
+  wardNo?: string;
+  tole?: string;
+  postalCode?: string;
+  country?: string;
+  sameAsPermanent?: boolean;
+}
+
+export interface PublicHoliday {
+  id: string;
+  name: string;
+  date: string;
+  dateBS?: string;
+  type: 'National' | 'Festival' | 'Regional';
+  isRecurring?: boolean;
+}
+
 
