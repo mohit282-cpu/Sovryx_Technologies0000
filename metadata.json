@@ -1,0 +1,6 @@
+{
+  "name": "Sovryx Company OS",
+  "description": "AI-powered CEO Operating System for managing employees, projects, performance, tasks, clients, documents, and reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
