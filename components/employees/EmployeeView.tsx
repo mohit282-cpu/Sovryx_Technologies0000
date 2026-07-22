@@ -560,27 +560,16 @@ export default function EmployeeView({ employees, onRefresh }: EmployeeViewProps
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-slate-300 block mb-1">Position *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. AI Architect"
-                    value={newEmp.position}
-                    onChange={e => setNewEmp({ ...newEmp, position: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-300 block mb-1">Annual Salary ($)</label>
-                  <input
-                    type="number"
-                    value={newEmp.salary}
-                    onChange={e => setNewEmp({ ...newEmp, salary: Number(e.target.value) })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
+              <div>
+                <label className="text-slate-300 block mb-1">Position *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. AI Architect"
+                  value={newEmp.position}
+                  onChange={e => setNewEmp({ ...newEmp, position: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
+                />
               </div>
 
               <div>
