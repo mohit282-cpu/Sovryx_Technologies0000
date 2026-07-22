@@ -129,30 +129,6 @@ export default function Header({
 
       {/* Right Actions */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Clear DB Button */}
-        <button
-          id="btn-clear-db-header"
-          onClick={handleClearData}
-          disabled={clearing || seeding}
-          title="Clear all database collections to ZERO for production slate"
-          className="hidden lg:flex items-center gap-1.5 text-xs font-medium bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 px-3 py-1.5 rounded-lg transition-colors"
-        >
-          <Trash2 className={`w-3.5 h-3.5 ${clearing ? 'animate-spin text-rose-400' : 'text-rose-400'}`} />
-          {clearing ? 'Clearing...' : 'Clear DB'}
-        </button>
-
-        {/* Seed Data Button */}
-        <button
-          id="btn-seed-data"
-          onClick={handleSeedData}
-          disabled={seeding || clearing}
-          title="Populate demo data into Firestore"
-          className="hidden xl:flex items-center gap-1.5 text-xs font-medium bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 px-3 py-1.5 rounded-lg transition-colors"
-        >
-          <Database className={`w-3.5 h-3.5 ${seeding ? 'animate-spin text-indigo-400' : 'text-slate-400'}`} />
-          {seeding ? 'Seeding...' : 'Seed Data'}
-        </button>
-
         {/* AI Co-Pilot Launcher */}
         <button
           id="btn-ai-copilot"

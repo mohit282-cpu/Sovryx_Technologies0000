@@ -116,10 +116,10 @@ export default function CEOLayout() {
     };
   }, []);
 
-  // Auto seed on first launch if empty
+  // Auto prompt setup wizard on first launch if empty
   useEffect(() => {
     if (initialLoaded && employees.length === 0 && projects.length === 0) {
-      seedInitialData().catch(console.error);
+      setIsWizardOpen(true);
     }
   }, [initialLoaded, employees.length, projects.length]);
 

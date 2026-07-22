@@ -193,21 +193,11 @@ export default function SettingsView({ settings, onRefresh }: SettingsViewProps)
           <button
             id="btn-clear-db-zero"
             onClick={handleClearDataToZero}
-            disabled={clearing || seeding}
+            disabled={clearing}
             className="flex items-center gap-2 text-xs font-bold bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 px-4 py-2.5 rounded-xl transition-all border border-rose-500/30"
           >
             <Trash2 className="w-4 h-4 text-rose-400" />
             {clearing ? 'Clearing Database to Zero...' : 'Clear Database to ZERO (Production Slate)'}
-          </button>
-
-          <button
-            id="btn-reseed-data"
-            onClick={handleSeedData}
-            disabled={seeding || clearing}
-            className="flex items-center gap-2 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-amber-400 px-4 py-2.5 rounded-xl transition-all border border-slate-700"
-          >
-            <Database className="w-4 h-4" />
-            {seeding ? 'Seeding Firestore...' : 'Re-seed Demo Data'}
           </button>
         </div>
       </div>
