@@ -16,7 +16,13 @@ import {
   Settings,
   Shield,
   Zap,
-  ChevronRight
+  ChevronRight,
+  Crown,
+  Target,
+  Compass,
+  Inbox,
+  User,
+  LineChart
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -26,20 +32,43 @@ interface SidebarProps {
   setIsMobileOpen: (open: boolean) => void;
 }
 
-export const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'employees', label: 'Employees', icon: Users },
-  { id: 'projects', label: 'Projects', icon: Briefcase },
-  { id: 'tasks', label: 'Tasks', icon: CheckSquare },
-  { id: 'performance', label: 'Performance', icon: TrendingUp },
-  { id: 'attendance', label: 'Attendance', icon: Clock },
-  { id: 'meetings', label: 'Meetings', icon: CalendarDays },
-  { id: 'clients', label: 'Clients', icon: UserCheck },
-  { id: 'documents', label: 'Documents', icon: FileText },
-  { id: 'notifications', label: 'Notifications', icon: Bell },
-  { id: 'reports', label: 'Reports', icon: BarChart3 },
-  { id: 'settings', label: 'Settings', icon: Settings },
+export const NAV_GROUPS = [
+  {
+    title: 'Executive Command',
+    items: [
+      { id: 'ceo-command', label: 'CEO Command Center', icon: Crown },
+      { id: 'kpi', label: 'KPI Dashboard', icon: LineChart },
+      { id: 'goals', label: 'Goals & OKRs', icon: Target },
+      { id: 'strategy', label: 'Strategic Planning', icon: Compass },
+      { id: 'decisions', label: 'CEO Decision Log', icon: FileText },
+    ]
+  },
+  {
+    title: 'Workforce & Execution',
+    items: [
+      { id: 'employees', label: 'Employees', icon: Users },
+      { id: 'portal', label: 'Employee Portal', icon: User },
+      { id: 'requests', label: 'Request Center', icon: Inbox },
+      { id: 'projects', label: 'Projects & Gantt', icon: Briefcase },
+      { id: 'tasks', label: 'Tasks', icon: CheckSquare },
+    ]
+  },
+  {
+    title: 'Operations & Governance',
+    items: [
+      { id: 'performance', label: 'Performance', icon: TrendingUp },
+      { id: 'attendance', label: 'Attendance', icon: Clock },
+      { id: 'meetings', label: 'Meetings', icon: CalendarDays },
+      { id: 'clients', label: 'Clients', icon: UserCheck },
+      { id: 'documents', label: 'Documents', icon: FileText },
+      { id: 'notifications', label: 'Notifications', icon: Bell },
+      { id: 'reports', label: 'Reports & Audits', icon: BarChart3 },
+      { id: 'settings', label: 'Settings & Seeding', icon: Settings },
+    ]
+  }
 ];
+
+export const NAV_ITEMS = NAV_GROUPS.flatMap(g => g.items);
 
 export default function Sidebar({
   currentModule,
@@ -93,35 +122,39 @@ export default function Sidebar({
         </div>
 
         {/* Navigation Modules */}
-        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1 custom-scrollbar">
-          <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            OS Modules
-          </div>
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentModule === item.id;
-            return (
-              <button
-                key={item.id}
-                id={`nav-item-${item.id}`}
-                onClick={() => {
-                  onSelectModule(item.id);
-                  setIsMobileOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
-                  isActive
-                    ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-600/25 font-semibold'
-                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-900/80'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                  <span>{item.label}</span>
-                </div>
-                {isActive && <ChevronRight className="w-3.5 h-3.5 text-indigo-200" />}
-              </button>
-            );
-          })}
+        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-4 custom-scrollbar">
+          {NAV_GROUPS.map((group, gIdx) => (
+            <div key={gIdx} className="space-y-1">
+              <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                {group.title}
+              </div>
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = currentModule === item.id || (item.id === 'ceo-command' && currentModule === 'dashboard');
+                return (
+                  <button
+                    key={item.id}
+                    id={`nav-item-${item.id}`}
+                    onClick={() => {
+                      onSelectModule(item.id === 'ceo-command' ? 'dashboard' : item.id);
+                      setIsMobileOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                      isActive
+                        ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-600/25 font-semibold'
+                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-900/80'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                      <span>{item.label}</span>
+                    </div>
+                    {isActive && <ChevronRight className="w-3.5 h-3.5 text-indigo-200" />}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </div>
 
         {/* Bottom AI Status */}

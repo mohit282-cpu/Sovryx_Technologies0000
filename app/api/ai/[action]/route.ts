@@ -19,12 +19,49 @@ export async function POST(
     const body = await req.json();
 
     const ai = getGenAIClient();
-    const model = "gemini-2.5-flash";
+    const model = "gemini-3.6-flash";
 
     let systemInstruction = "You are Sovryx OS, an elite AI Executive Advisor and Chief Operating Officer intelligence engine serving the company CEO.";
     let prompt = "";
 
     switch (action) {
+      case "daily-briefing":
+        prompt = `Generate a comprehensive Daily CEO Executive Briefing based on live operational data:
+${JSON.stringify(body, null, 2)}
+
+Provide:
+1. Executive Overview & Daily Health Score Analysis
+2. Top Operational Priority for Today
+3. Employees Requiring CEO Attention & Reasons
+4. At-Risk Projects & Recommended Direct Interventions
+5. Strategic Decisions Required Today`;
+        break;
+
+      case "executive-query":
+        prompt = `Answer the CEO's executive inquiry: "${body.query}"
+Company Context:
+Employees: ${JSON.stringify(body.employees || [], null, 2)}
+Projects: ${JSON.stringify(body.projects || [], null, 2)}
+Tasks: ${JSON.stringify(body.tasks || [], null, 2)}
+Performance Metrics: ${JSON.stringify(body.performance || [], null, 2)}
+
+Provide a direct, analytical, decision-ready response tailored for the CEO. Highlight top/bottom performers, risks, promotion candidates, or strategic priorities based on the question.`;
+        break;
+
+      case "health-analysis":
+        prompt = `Analyze company operational data and compute health recommendations:
+Metrics: ${JSON.stringify(body, null, 2)}
+
+Provide a breakdown of company health strengths, vulnerabilities, and 3 actionable steps to increase company health score to 95+.`;
+        break;
+
+      case "goal-recommendation":
+        prompt = `Analyze company strategy and generate AI OKR recommendations for goal: "${body.goalTitle}"
+Context: ${JSON.stringify(body, null, 2)}
+
+Provide concrete key results, milestones, and target velocity.`;
+        break;
+
       case "weekly-summary":
         prompt = `Generate a concise, high-impact Weekly CEO Executive Summary for the company based on this operational context:
 ${JSON.stringify(body, null, 2)}

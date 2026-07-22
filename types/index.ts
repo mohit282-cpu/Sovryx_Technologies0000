@@ -18,11 +18,26 @@ export interface Employee {
   warnings: { id: string; date: string; reason: string; issuedBy: string }[];
   documents: { id: string; name: string; url: string; date: string }[];
   notes: { id: string; date: string; text: string; author: string }[];
+  biography?: string;
+  emergencyContact?: { name: string; relation: string; phone: string };
   createdAt?: string;
 }
 
 export type TaskPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
 export type TaskStatus = 'Todo' | 'In Progress' | 'Review' | 'Completed';
+
+export interface SubTask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface TaskComment {
+  id: string;
+  authorName: string;
+  text: string;
+  timestamp: string;
+}
 
 export interface Task {
   id: string;
@@ -41,6 +56,12 @@ export interface Task {
   actualHours: number;
   qualityScore: number; // 0 - 100
   completionPercentage: number; // 0 - 100
+  subtasks?: SubTask[];
+  checklist?: { id: string; label: string; done: boolean }[];
+  attachments?: { id: string; name: string; url: string }[];
+  comments?: TaskComment[];
+  isRecurring?: boolean;
+  recurringInterval?: 'Daily' | 'Weekly' | 'Monthly';
   createdAt?: string;
 }
 
@@ -178,3 +199,261 @@ export interface CompanySettings {
   aiDailyReportEnabled: boolean;
   theme: 'dark' | 'light' | 'system';
 }
+
+// ==========================================
+// NEW ENTERPRISE MODULE INTERFACES
+// ==========================================
+
+export type HealthStatus = 'Excellent' | 'Good' | 'Average' | 'Poor' | 'Critical';
+
+export interface CompanyHealthData {
+  id?: string;
+  score: number; // 0 - 100
+  status: HealthStatus;
+  productivityScore: number;
+  attendanceScore: number;
+  projectProgressScore: number;
+  taskCompletionRate: number;
+  lateTasksCount: number;
+  projectRisksCount: number;
+  clientSatisfaction: number;
+  updatedAt: string;
+}
+
+export interface GoalOKR {
+  id: string;
+  goal: string;
+  description: string;
+  ownerId: string;
+  ownerName: string;
+  department: string;
+  targetDate: string;
+  progress: number; // 0 - 100
+  status: 'Not Started' | 'On Track' | 'At Risk' | 'Achieved';
+  priority: 'Low' | 'Medium' | 'High' | 'Urgent';
+  linkedProjectIds?: string[];
+  linkedTaskIds?: string[];
+  aiRecommendation?: string;
+  createdAt?: string;
+}
+
+export interface StrategicPlan {
+  id: string;
+  title: string;
+  mission: string;
+  vision: string;
+  quarterlyObjectives: string[];
+  annualObjectives: string[];
+  swot: {
+    strengths: string[];
+    weaknesses: string[];
+    opportunities: string[];
+    threats: string[];
+  };
+  risks: { risk: string; mitigation: string; level: 'Low' | 'Medium' | 'High' }[];
+  roadmap: { phase: string; period: string; focus: string; progress: number }[];
+  milestones: { id: string; title: string; date: string; completed: boolean }[];
+  updatedAt?: string;
+}
+
+export interface CEODecision {
+  id: string;
+  title: string;
+  decision: string;
+  reason: string;
+  impact: string;
+  relatedProjectId?: string;
+  relatedProjectName?: string;
+  date: string;
+  followUpDate?: string;
+  outcome?: string;
+  status: 'Pending' | 'In Progress' | 'Implemented' | 'Reviewed';
+  createdAt?: string;
+}
+
+export type SkillLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
+
+export interface SkillItem {
+  id: string;
+  name: string;
+  category: string;
+  level: SkillLevel;
+  employeeCount?: number;
+  certifiedCount?: number;
+}
+
+export interface EmployeeCertificate {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  certificateName: string;
+  issuer: string;
+  issueDate: string;
+  expiryDate: string;
+  fileUrl?: string;
+  reminderDaysBefore: number;
+  isExpired?: boolean;
+}
+
+export interface EquipmentAsset {
+  id: string;
+  assetNumber: string;
+  name: string;
+  type: 'Laptop' | 'Monitor' | 'Phone' | 'Software License' | 'Access Card' | 'Other';
+  purchaseDate: string;
+  warrantyExpiry: string;
+  condition: 'New' | 'Good' | 'Fair' | 'Maintenance Required' | 'Retired';
+  assignedEmployeeId?: string;
+  assignedEmployeeName?: string;
+  assignedDate?: string;
+  notes?: string;
+}
+
+export interface EmployeeAward {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  title: string;
+  category: string;
+  date: string;
+  description: string;
+  awardedBy: string;
+}
+
+export interface DisciplinaryRecord {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  date: string;
+  issue: string;
+  actionTaken: string;
+  status: 'Active Warning' | 'Resolved' | 'Escalated';
+  issuedBy: string;
+}
+
+export interface CareerDevelopmentPlan {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  currentRole: string;
+  targetRole: string;
+  targetTimeline: string;
+  requiredSkills: string[];
+  actionSteps: { step: string; done: boolean }[];
+  mentorId?: string;
+  mentorName?: string;
+  status: 'In Progress' | 'On Track' | 'Promoted';
+}
+
+export interface ExitInterview {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  exitDate: string;
+  reason: string;
+  feedback: string;
+  conductedBy: string;
+}
+
+export interface TimeLog {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  taskId: string;
+  taskTitle: string;
+  projectId: string;
+  projectName?: string;
+  date: string;
+  startTime: string;
+  endTime?: string;
+  hoursSpent: number;
+  notes?: string;
+}
+
+export interface ProjectRisk {
+  id: string;
+  projectId: string;
+  projectName: string;
+  riskTitle: string;
+  category: 'Technical' | 'Resource' | 'Budget' | 'Client' | 'Schedule';
+  impact: 'Low' | 'Medium' | 'High' | 'Critical';
+  likelihood: 'Low' | 'Medium' | 'High';
+  mitigationPlan: string;
+  ownerName: string;
+  status: 'Open' | 'Mitigated' | 'Closed';
+}
+
+export interface ProjectMilestone {
+  id: string;
+  projectId: string;
+  title: string;
+  dueDate: string;
+  completed: boolean;
+  progress: number;
+}
+
+export interface ProjectDependency {
+  id: string;
+  projectId: string;
+  dependentTaskId: string;
+  dependentTaskTitle: string;
+  prerequisiteTaskId: string;
+  prerequisiteTaskTitle: string;
+  type: 'Finish-to-Start' | 'Start-to-Start';
+}
+
+export interface Sprint {
+  id: string;
+  projectId: string;
+  projectName: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: 'Planning' | 'Active' | 'Completed';
+  goal: string;
+}
+
+export interface ResourceAllocation {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  projectId: string;
+  projectName: string;
+  allocatedPercentage: number; // e.g. 50%
+  startDate: string;
+  endDate: string;
+}
+
+export type LeaveStatus = 'Pending' | 'Approved' | 'Rejected';
+
+export interface LeaveRequest {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  type: 'Annual Leave' | 'Sick Leave' | 'Maternity/Paternity' | 'Casual' | 'Unpaid';
+  startDate: string;
+  endDate: string;
+  totalDays: number;
+  reason: string;
+  status: LeaveStatus;
+  reviewedBy?: string;
+  reviewDate?: string;
+  reviewNote?: string;
+  createdAt?: string;
+}
+
+export type RequestType = 'Equipment Request' | 'Leave Request' | 'Document Request' | 'Support Request' | 'Other Request';
+
+export interface EmployeeRequest {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  type: RequestType;
+  title: string;
+  details: string;
+  priority: 'Low' | 'Medium' | 'High' | 'Urgent';
+  status: 'Pending' | 'Approved' | 'Rejected' | 'In Progress';
+  reviewNote?: string;
+  createdAt?: string;
+}
+

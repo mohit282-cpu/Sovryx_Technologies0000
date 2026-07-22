@@ -8,6 +8,14 @@ import CompanySetupWizard from '../onboarding/CompanySetupWizard';
 
 // Module Views
 import DashboardView from '../dashboard/DashboardView';
+import CEOCommandCenter from '../dashboard/CEOCommandCenter';
+import KPIDashboard from '../kpi/KPIDashboard';
+import GoalsOKRView from '../goals/GoalsOKRView';
+import StrategicPlanningView from '../strategy/StrategicPlanningView';
+import DecisionLogView from '../decisions/DecisionLogView';
+import RequestCenterView from '../requests/RequestCenterView';
+import EmployeePortalView from '../portal/EmployeePortalView';
+
 import EmployeeView from '../employees/EmployeeView';
 import ProjectView from '../projects/ProjectView';
 import TaskView from '../tasks/TaskView';
@@ -31,7 +39,13 @@ import {
   CompanyDocument,
   NotificationItem,
   CompanyReport,
-  CompanySettings
+  CompanySettings,
+  GoalOKR,
+  StrategicPlan,
+  CEODecision,
+  LeaveRequest,
+  EmployeeRequest,
+  CompanyHealthData
 } from '@/types';
 
 import {
@@ -59,9 +73,18 @@ export default function CEOLayout() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [reports, setReports] = useState<CompanyReport[]>([]);
   const [settings, setSettings] = useState<CompanySettings>(DEFAULT_SETTINGS);
+
+  // Enterprise modules state
+  const [goals, setGoals] = useState<GoalOKR[]>([]);
+  const [plans, setPlans] = useState<StrategicPlan[]>([]);
+  const [decisions, setDecisions] = useState<CEODecision[]>([]);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [employeeRequests, setEmployeeRequests] = useState<EmployeeRequest[]>([]);
+  const [healthData, setHealthData] = useState<CompanyHealthData | undefined>(undefined);
+
   const [initialLoaded, setInitialLoaded] = useState(false);
 
-  // Subscribe to all 12 collections in real-time
+  // Subscribe to all collections in real-time
   useEffect(() => {
     const unsub1 = subscribeCollection<Employee>('employees', (data) => setEmployees(data));
     const unsub2 = subscribeCollection<Project>('projects', (data) => setProjects(data));
@@ -74,6 +97,13 @@ export default function CEOLayout() {
     const unsub9 = subscribeCollection<NotificationItem>('notifications', (data) => setNotifications(data));
     const unsub10 = subscribeCollection<CompanyReport>('reports', (data) => setReports(data));
 
+    const unsub11 = subscribeCollection<GoalOKR>('goals', (data) => setGoals(data));
+    const unsub12 = subscribeCollection<StrategicPlan>('strategicPlans', (data) => setPlans(data));
+    const unsub13 = subscribeCollection<CEODecision>('decisions', (data) => setDecisions(data));
+    const unsub14 = subscribeCollection<LeaveRequest>('leaveRequests', (data) => setLeaveRequests(data));
+    const unsub15 = subscribeCollection<EmployeeRequest>('employeeRequests', (data) => setEmployeeRequests(data));
+    const unsub16 = subscribeCollection<CompanyHealthData>('companyHealth', (data) => setHealthData(data[0]));
+
     getSettings().then((s) => {
       if (s) setSettings(s);
       setInitialLoaded(true);
@@ -82,6 +112,7 @@ export default function CEOLayout() {
     return () => {
       unsub1(); unsub2(); unsub3(); unsub4(); unsub5();
       unsub6(); unsub7(); unsub8(); unsub9(); unsub10();
+      unsub11(); unsub12(); unsub13(); unsub14(); unsub15(); unsub16();
     };
   }, []);
 
@@ -99,15 +130,72 @@ export default function CEOLayout() {
   const renderCurrentModuleView = () => {
     switch (currentModule) {
       case 'dashboard':
+      case 'ceo-command':
         return (
-          <DashboardView
+          <CEOCommandCenter
             employees={employees}
             projects={projects}
             tasks={tasks}
             attendance={attendance}
             notifications={notifications}
+            meetings={meetings}
+            decisions={decisions}
+            leaveRequests={leaveRequests}
+            healthData={healthData}
             onSelectModule={setCurrentModule}
             onOpenAIAssistant={() => setIsAIOpen(true)}
+            onRefresh={refreshData}
+          />
+        );
+      case 'kpi':
+        return (
+          <KPIDashboard
+            employees={employees}
+            projects={projects}
+            tasks={tasks}
+            attendance={attendance}
+            performance={performance}
+          />
+        );
+      case 'goals':
+        return (
+          <GoalsOKRView
+            goals={goals}
+            employees={employees}
+            projects={projects}
+            onRefresh={refreshData}
+          />
+        );
+      case 'strategy':
+        return (
+          <StrategicPlanningView
+            plan={plans[0]}
+          />
+        );
+      case 'decisions':
+        return (
+          <DecisionLogView
+            decisions={decisions}
+            projects={projects}
+            onRefresh={refreshData}
+          />
+        );
+      case 'requests':
+        return (
+          <RequestCenterView
+            leaveRequests={leaveRequests}
+            employeeRequests={employeeRequests}
+            employees={employees}
+            onRefresh={refreshData}
+          />
+        );
+      case 'portal':
+        return (
+          <EmployeePortalView
+            employees={employees}
+            tasks={tasks}
+            attendance={attendance}
+            onRefresh={refreshData}
           />
         );
       case 'employees':
@@ -134,14 +222,19 @@ export default function CEOLayout() {
         return <SettingsView settings={settings} onRefresh={refreshData} />;
       default:
         return (
-          <DashboardView
+          <CEOCommandCenter
             employees={employees}
             projects={projects}
             tasks={tasks}
             attendance={attendance}
             notifications={notifications}
+            meetings={meetings}
+            decisions={decisions}
+            leaveRequests={leaveRequests}
+            healthData={healthData}
             onSelectModule={setCurrentModule}
             onOpenAIAssistant={() => setIsAIOpen(true)}
+            onRefresh={refreshData}
           />
         );
     }

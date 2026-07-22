@@ -25,7 +25,19 @@ import {
   CompanyDocument,
   NotificationItem,
   CompanyReport,
-  CompanySettings
+  CompanySettings,
+  CompanyHealthData,
+  GoalOKR,
+  StrategicPlan,
+  CEODecision,
+  SkillItem,
+  EmployeeCertificate,
+  EquipmentAsset,
+  LeaveRequest,
+  EmployeeRequest,
+  ProjectRisk,
+  ProjectMilestone,
+  TimeLog
 } from '@/types';
 
 // Default Settings
@@ -483,6 +495,186 @@ export async function seedInitialData() {
       await addDoc(collection(db, 'reports'), r);
     }
 
+    // 12. Company Health
+    const healthRef = doc(db, 'companyHealth', 'current');
+    const initialHealth: CompanyHealthData = {
+      score: 88,
+      status: 'Good',
+      productivityScore: 91,
+      attendanceScore: 94,
+      projectProgressScore: 78,
+      taskCompletionRate: 85,
+      lateTasksCount: 2,
+      projectRisksCount: 1,
+      clientSatisfaction: 95,
+      updatedAt: today
+    };
+    await setDoc(healthRef, initialHealth, { merge: true });
+
+    // 13. Goals & OKRs
+    const goalsData: Omit<GoalOKR, 'id'>[] = [
+      {
+        goal: 'Achieve Sub-30ms Token Latency across Neural OS Core',
+        description: 'Optimize AI pipeline quantization and CUDA kernel memory buffers.',
+        ownerId: empDocs[0]?.id || '',
+        ownerName: empDocs[0]?.name || 'Elena Rostova',
+        department: 'Engineering',
+        targetDate: '2026-09-15',
+        progress: 70,
+        status: 'On Track',
+        priority: 'Urgent',
+        linkedProjectIds: [prjDocs[0]?.id || ''],
+        aiRecommendation: 'Allocate dedicated benchmarking cluster to prevent memory regression.'
+      },
+      {
+        goal: 'Expand Enterprise Revenue to $1.2M ARR',
+        description: 'Secure Nexus Corp renewal and onboard 2 new healthcare AI clients.',
+        ownerId: empDocs[4]?.id || '',
+        ownerName: empDocs[4]?.name || 'Amara Okafor',
+        department: 'Business',
+        targetDate: '2026-10-31',
+        progress: 55,
+        status: 'On Track',
+        priority: 'High',
+        linkedProjectIds: [prjDocs[0]?.id || '', prjDocs[2]?.id || ''],
+        aiRecommendation: 'Schedule Q3 executive briefing with Vanguard CTO.'
+      }
+    ];
+    for (const g of goalsData) {
+      await addDoc(collection(db, 'goals'), g);
+    }
+
+    // 14. Strategic Plans
+    const stratPlanRef = doc(db, 'strategicPlans', 'master');
+    const masterStratPlan: Omit<StrategicPlan, 'id'> = {
+      title: 'Sovryx 2026 Sovereign Enterprise Operating Strategy',
+      mission: 'To build autonomous, ultra-performant AI systems that empower sovereign enterprise command.',
+      vision: 'Become the world standard in high-velocity, serverless AI OS architectures.',
+      quarterlyObjectives: [
+        'Q3: Launch Neural OS Core v3.5 to Nexus Corp Global',
+        'Q3: Resolve all backend database latency bottlenecks in BioGen Pipeline',
+        'Q4: Achieve SOC2 Type II compliance and scale sales team'
+      ],
+      annualObjectives: [
+        'Scale annual recurring revenue beyond $2.0M',
+        'Maintain zero high-severity client outages',
+        'Keep overall workforce productivity above 90%'
+      ],
+      swot: {
+        strengths: ['Proprietary Gemini 3.6 Flash integration', 'Elite engineering talent', 'Direct CEO command structure'],
+        weaknesses: ['Small team size', 'Dependency on single senior backend architect'],
+        opportunities: ['Expansion into biotech predictive pipeline market', 'Enterprise AI auditing SaaS'],
+        threats: ['Rapidly shifting LLM benchmark standards', 'Cloud compute cost spikes']
+      },
+      risks: [
+        { risk: 'BioGen project delay due to DB query leaks', mitigation: 'Assigned senior mentor and daily query profiling', level: 'High' }
+      ],
+      roadmap: [
+        { phase: 'Phase 1: Foundation & Core OS', period: 'Q1-Q2 2026', focus: 'Engine Architecture', progress: 100 },
+        { phase: 'Phase 2: Enterprise Integration', period: 'Q3 2026', focus: 'Client Delivery & Security', progress: 65 },
+        { phase: 'Phase 3: Autonomous Scaling', period: 'Q4 2026', focus: 'Multi-Tenant SaaS Rollout', progress: 20 }
+      ],
+      milestones: [
+        { id: 'm-1', title: 'Neural Model Token Quantization', date: '2026-07-28', completed: false },
+        { id: 'm-2', title: 'BioGen Predictive Pipeline Data Ingestion', date: '2026-08-15', completed: false }
+      ],
+      updatedAt: today
+    };
+    await setDoc(stratPlanRef, masterStratPlan, { merge: true });
+
+    // 15. Decisions Log
+    const decisionsData: Omit<CEODecision, 'id'>[] = [
+      {
+        title: 'Approved INT8 Quantization Strategy for AI Core',
+        decision: 'Migrate AI model serving infrastructure to FP16/INT8 hybrid execution.',
+        reason: 'Reduces model inference cost by 42% while improving token speed under 40ms.',
+        impact: 'High performance improvement for Nexus Corp enterprise SLA.',
+        relatedProjectId: prjDocs[0]?.id || '',
+        relatedProjectName: prjDocs[0]?.name || 'Neural OS Core',
+        date: today,
+        status: 'Implemented'
+      }
+    ];
+    for (const dec of decisionsData) {
+      await addDoc(collection(db, 'decisions'), dec);
+    }
+
+    // 16. Skills
+    const skillsData: Omit<SkillItem, 'id'>[] = [
+      { name: 'Python / PyTorch', category: 'Engineering', level: 'Expert', employeeCount: 3, certifiedCount: 2 },
+      { name: 'TypeScript & React', category: 'Engineering', level: 'Expert', employeeCount: 4, certifiedCount: 3 },
+      { name: 'System Architecture', category: 'Engineering', level: 'Advanced', employeeCount: 2, certifiedCount: 2 },
+      { name: 'Key Account Management', category: 'Business', level: 'Expert', employeeCount: 1, certifiedCount: 1 }
+    ];
+    for (const sk of skillsData) {
+      await addDoc(collection(db, 'skills'), sk);
+    }
+
+    // 17. Equipment / Assets
+    const equipmentData: Omit<EquipmentAsset, 'id'>[] = [
+      {
+        assetNumber: 'ASSET-EQ-101',
+        name: 'Apple MacBook Pro M3 Max (64GB)',
+        type: 'Laptop',
+        purchaseDate: '2024-01-10',
+        warrantyExpiry: '2027-01-10',
+        condition: 'New',
+        assignedEmployeeId: empDocs[0]?.id,
+        assignedEmployeeName: empDocs[0]?.name,
+        assignedDate: '2024-01-15',
+        notes: 'Primary engineering development machine'
+      },
+      {
+        assetNumber: 'ASSET-EQ-102',
+        name: 'Dell UltraSharp 32" 4K Monitor',
+        type: 'Monitor',
+        purchaseDate: '2024-03-05',
+        warrantyExpiry: '2027-03-05',
+        condition: 'Good',
+        assignedEmployeeId: empDocs[1]?.id,
+        assignedEmployeeName: empDocs[1]?.name,
+        assignedDate: '2024-03-10'
+      }
+    ];
+    for (const eq of equipmentData) {
+      await addDoc(collection(db, 'equipment'), eq);
+    }
+
+    // 18. Leave Requests
+    const leaveData: Omit<LeaveRequest, 'id'>[] = [
+      {
+        employeeId: empDocs[2]?.id || '',
+        employeeName: empDocs[2]?.name || 'Sophia Chen',
+        type: 'Annual Leave',
+        startDate: '2026-08-10',
+        endDate: '2026-08-14',
+        totalDays: 5,
+        reason: 'Family vacation and personal downtime.',
+        status: 'Pending',
+        createdAt: today
+      }
+    ];
+    for (const lv of leaveData) {
+      await addDoc(collection(db, 'leaveRequests'), lv);
+    }
+
+    // 19. Employee Requests
+    const reqData: Omit<EmployeeRequest, 'id'>[] = [
+      {
+        employeeId: empDocs[3]?.id || '',
+        employeeName: empDocs[3]?.name || 'David Miller',
+        type: 'Equipment Request',
+        title: 'Request for RAM Upgrade to 64GB',
+        details: 'PostgreSQL local container testing requires additional memory for heavy seed data loads.',
+        priority: 'High',
+        status: 'Pending',
+        createdAt: today
+      }
+    ];
+    for (const req of reqData) {
+      await addDoc(collection(db, 'employeeRequests'), req);
+    }
+
     console.log('Sovryx Company OS Initial Data Seeded Successfully!');
     return true;
   } catch (error) {
@@ -508,7 +700,29 @@ export async function clearDatabaseToZero() {
       'companies',
       'users',
       'departments',
-      'onboarding_progress'
+      'onboarding_progress',
+      'goals',
+      'okr',
+      'strategicPlans',
+      'decisions',
+      'skills',
+      'certificates',
+      'equipment',
+      'employeeAwards',
+      'disciplinaryRecords',
+      'careerPlans',
+      'exitInterviews',
+      'timeLogs',
+      'projectRisks',
+      'milestones',
+      'dependencies',
+      'sprints',
+      'resourceAllocation',
+      'leaveRequests',
+      'employeeRequests',
+      'companyHealth',
+      'kpiReports',
+      'aiReports'
     ];
 
     for (const colName of collectionsToClear) {
