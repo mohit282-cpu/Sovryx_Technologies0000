@@ -116,13 +116,6 @@ export default function CEOLayout() {
     };
   }, []);
 
-  // Auto prompt setup wizard on first launch if empty
-  useEffect(() => {
-    if (initialLoaded && employees.length === 0 && projects.length === 0) {
-      setIsWizardOpen(true);
-    }
-  }, [initialLoaded, employees.length, projects.length]);
-
   const refreshData = () => {
     getSettings().then((s) => s && setSettings(s));
   };
