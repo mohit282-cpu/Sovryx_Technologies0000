@@ -40,15 +40,41 @@ import {
   TimeLog
 } from '@/types';
 
-// Default Settings
+// Default Settings (Localized for Nepal)
 export const DEFAULT_SETTINGS: CompanySettings = {
-  companyName: '',
-  ceoName: '',
-  ceoEmail: '',
-  currency: 'USD',
-  timezone: 'UTC',
-  workingHoursStart: '09:00',
-  workingHoursEnd: '18:00',
+  companyName: 'Sovryx Nepal Pvt. Ltd.',
+  ceoName: 'Executive Director',
+  ceoEmail: 'ceo@sovryx.np',
+  country: 'Nepal',
+  currency: 'NPR',
+  currencySymbol: 'Rs.',
+  timezone: 'Asia/Kathmandu',
+  dateFormat: 'DD/MM/YYYY',
+  timeFormat: '12h',
+  weekStartsOn: 'Sunday',
+  weekendDays: ['Saturday'],
+  workingHoursStart: '10:00',
+  workingHoursEnd: '17:00',
+  companyRegistrationNo: '284910/080/081',
+  panNo: '609812345',
+  vatNo: '609812345',
+  ocrRegistrationNo: 'OCR-NP-2080-112',
+  irdRegistration: 'Kathmandu-IRD-04',
+  province: 'Bagmati Province',
+  district: 'Kathmandu',
+  localMunicipality: 'Kathmandu Metropolitan City',
+  wardNumber: '4',
+  businessType: 'Private Limited',
+  businessCategory: 'IT & Software',
+  address: {
+    province: 'Bagmati Province',
+    district: 'Kathmandu',
+    municipality: 'Kathmandu Metropolitan City',
+    wardNo: '4',
+    tole: 'Maharajgunj',
+    postalCode: '44600',
+    country: 'Nepal'
+  },
   aiAutoRiskDetection: true,
   aiDailyReportEnabled: true,
   theme: 'dark'

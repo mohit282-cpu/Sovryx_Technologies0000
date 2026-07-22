@@ -47,9 +47,19 @@ export default function EmployeeView({ employees, onRefresh }: EmployeeViewProps
     phone: '',
     position: '',
     department: 'Engineering',
-    salary: 120000,
+    salary: 600000, // NPR per year default
     skills: 'React, TypeScript, Node.js',
-    photo: ''
+    photo: '',
+    citizenshipNo: '',
+    citizenshipDistrict: 'Kathmandu',
+    nationalId: '',
+    panNo: '',
+    permanentAddress: 'Kathmandu, Bagmati, Nepal',
+    bankName: 'Nabil Bank Ltd.',
+    bankBranch: 'Maharajgunj Branch',
+    bankAccount: '0101017500001',
+    esewaNo: '',
+    khaltiNo: ''
   });
 
   // Warning modal state
@@ -76,7 +86,7 @@ export default function EmployeeView({ employees, onRefresh }: EmployeeViewProps
         employeeId: empId,
         name: newEmp.name,
         email: newEmp.email,
-        phone: newEmp.phone || '+1 (555) 000-0000',
+        phone: newEmp.phone || '+977 9800000000',
         position: newEmp.position,
         department: newEmp.department,
         salary: Number(newEmp.salary),
@@ -85,6 +95,23 @@ export default function EmployeeView({ employees, onRefresh }: EmployeeViewProps
         skills: skillsArr,
         performanceScore: 85,
         attendanceScore: 90,
+        
+        // Nepal fields
+        citizenshipNo: newEmp.citizenshipNo,
+        citizenshipDistrict: newEmp.citizenshipDistrict,
+        nationalId: newEmp.nationalId,
+        panNo: newEmp.panNo,
+        permanentAddress: newEmp.permanentAddress,
+        bankInfo: newEmp.bankName ? {
+          bankName: newEmp.bankName,
+          branch: newEmp.bankBranch,
+          accountNumber: newEmp.bankAccount
+        } : undefined,
+        digitalWallets: {
+          esewaNo: newEmp.esewaNo,
+          khaltiNo: newEmp.khaltiNo
+        },
+
         warnings: [],
         documents: [],
         notes: [],

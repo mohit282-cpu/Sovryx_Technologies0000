@@ -22,7 +22,8 @@ import {
   Compass,
   Inbox,
   User,
-  LineChart
+  LineChart,
+  DollarSign
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -47,6 +48,7 @@ export const NAV_GROUPS = [
     title: 'Workforce & Execution',
     items: [
       { id: 'employees', label: 'Employees', icon: Users },
+      { id: 'payroll', label: 'Payroll & Bonus', icon: DollarSign },
       { id: 'portal', label: 'Employee Portal', icon: User },
       { id: 'requests', label: 'Request Center', icon: Inbox },
       { id: 'projects', label: 'Projects & Gantt', icon: Briefcase },
