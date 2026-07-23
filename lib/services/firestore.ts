@@ -81,21 +81,22 @@ export const STATIC_DEFAULT_EMPLOYEES: Partial<Employee>[] = [
 
 export async function ensureDefaultEmployees() {
   try {
-    const colRef = collection(db, 'employees');
+    const colRef = collection(db, 'users');
     const snap = await getDocs(colRef);
     if (snap.empty) {
       const defaultPasswordHash = hashPassword('password123');
       const defaults = [
-        { employeeId: 'EMP0001', name: 'Aarav Sharma', fullName: 'Aarav Sharma', role: 'CEO', password: defaultPasswordHash, department: 'Executive', position: 'Chief Executive Officer', email: 'ceo@sovryx.com', phone: '+977 9801112233', status: 'Active', salary: 350000, joinDate: '2024-01-01', skills: ['Strategy', 'Leadership', 'Management'], performanceScore: 98, attendanceScore: 100, warnings: [], documents: [], notes: [] },
-        { employeeId: 'EMP0002', name: 'Priya Adhikari', fullName: 'Priya Adhikari', role: 'Admin', password: defaultPasswordHash, department: 'Operations', position: 'Operations Director', email: 'admin@sovryx.com', phone: '+977 9802223344', status: 'Active', salary: 250000, joinDate: '2024-02-01', skills: ['Operations', 'Security', 'Governance'], performanceScore: 95, attendanceScore: 98, warnings: [], documents: [], notes: [] },
-        { employeeId: 'EMP0003', name: 'Rohan Karki', fullName: 'Rohan Karki', role: 'HR', password: defaultPasswordHash, department: 'Human Resources', position: 'HR Head', email: 'hr@sovryx.com', phone: '+977 9803334455', status: 'Active', salary: 200000, joinDate: '2024-03-01', skills: ['Recruitment', 'Payroll', 'Compliance'], performanceScore: 92, attendanceScore: 96, warnings: [], documents: [], notes: [] },
-        { employeeId: 'EMP0004', name: 'Sunil Thapa', fullName: 'Sunil Thapa', role: 'Manager', password: defaultPasswordHash, department: 'Engineering', position: 'Engineering Manager', email: 'manager@sovryx.com', phone: '+977 9804445566', status: 'Active', salary: 220000, joinDate: '2024-04-01', skills: ['Architecture', 'Agile', 'React'], performanceScore: 94, attendanceScore: 95, warnings: [], documents: [], notes: [] },
-        { employeeId: 'EMP0005', name: 'Sita Gurung', fullName: 'Sita Gurung', role: 'Employee', password: defaultPasswordHash, department: 'Engineering', position: 'Senior Full Stack Developer', email: 'employee@sovryx.com', phone: '+977 9805556677', status: 'Active', salary: 150000, joinDate: '2024-05-01', skills: ['TypeScript', 'Next.js', 'Tailwind'], performanceScore: 90, attendanceScore: 94, warnings: [], documents: [], notes: [] }
+        { employeeId: 'EMP0001', name: 'Aarav Sharma', fullName: 'Aarav Sharma', role: 'CEO', password: defaultPasswordHash, department: 'Executive', position: 'Chief Executive Officer', designation: 'Chief Executive Officer', email: 'ceo@sovryx.com', phone: '+977 9801112233', status: 'Active', salary: 350000, joinDate: '2024-01-01', skills: ['Strategy', 'Leadership', 'Management'], performanceScore: 98, attendanceScore: 100, warnings: [], documents: [], notes: [], forcePasswordChange: true, companyId: 'sovryx-hq', createdBy: 'system' },
+        { employeeId: 'EMP0002', name: 'Priya Adhikari', fullName: 'Priya Adhikari', role: 'Admin', password: defaultPasswordHash, department: 'Operations', position: 'Operations Director', designation: 'Operations Director', email: 'admin@sovryx.com', phone: '+977 9802223344', status: 'Active', salary: 250000, joinDate: '2024-02-01', skills: ['Operations', 'Security', 'Governance'], performanceScore: 95, attendanceScore: 98, warnings: [], documents: [], notes: [], forcePasswordChange: true, companyId: 'sovryx-hq', createdBy: 'system' },
+        { employeeId: 'EMP0003', name: 'Rohan Karki', fullName: 'Rohan Karki', role: 'HR', password: defaultPasswordHash, department: 'Human Resources', position: 'HR Head', designation: 'HR Head', email: 'hr@sovryx.com', phone: '+977 9803334455', status: 'Active', salary: 200000, joinDate: '2024-03-01', skills: ['Recruitment', 'Payroll', 'Compliance'], performanceScore: 92, attendanceScore: 96, warnings: [], documents: [], notes: [], forcePasswordChange: true, companyId: 'sovryx-hq', createdBy: 'system' },
+        { employeeId: 'EMP0004', name: 'Sunil Thapa', fullName: 'Sunil Thapa', role: 'Manager', password: defaultPasswordHash, department: 'Engineering', position: 'Engineering Manager', designation: 'Engineering Manager', email: 'manager@sovryx.com', phone: '+977 9804445566', status: 'Active', salary: 220000, joinDate: '2024-04-01', skills: ['Architecture', 'Agile', 'React'], performanceScore: 94, attendanceScore: 95, warnings: [], documents: [], notes: [], forcePasswordChange: true, companyId: 'sovryx-hq', createdBy: 'system' },
+        { employeeId: 'EMP0005', name: 'Sita Gurung', fullName: 'Sita Gurung', role: 'Employee', password: defaultPasswordHash, department: 'Engineering', position: 'Senior Full Stack Developer', designation: 'Senior Full Stack Developer', email: 'employee@sovryx.com', phone: '+977 9805556677', status: 'Active', salary: 150000, joinDate: '2024-05-01', skills: ['TypeScript', 'Next.js', 'Tailwind'], performanceScore: 90, attendanceScore: 94, warnings: [], documents: [], notes: [], forcePasswordChange: true, companyId: 'sovryx-hq', createdBy: 'system' }
       ];
       for (const emp of defaults) {
-        await addDoc(colRef, emp);
+        // Use employeeId as temporary document ID during initial seed (will be migrated to Firebase Auth UID on first login)
+        await setDoc(doc(db, 'users', emp.employeeId), emp);
       }
-      console.log('Default employees seeded successfully.');
+      console.log('Default employees seeded successfully into users collection.');
     }
   } catch (err) {
     console.error('Error ensuring default employees:', err);
@@ -106,7 +107,6 @@ export async function ensureDefaultEmployees() {
 export async function clearDatabaseToZero() {
   try {
     const collectionsToClear = [
-      'employees',
       'clients',
       'projects',
       'tasks',
@@ -161,9 +161,16 @@ export async function clearDatabaseToZero() {
   }
 }
 
+// Map 'employees' queries to 'users' to prevent breaking legacy frontend components
+export function getMappedCollectionName(name: string): string {
+  if (name === 'employees') return 'users';
+  return name;
+}
+
 // Generic collection listener
 export function subscribeCollection<T>(collectionName: string, callback: (data: T[]) => void) {
-  const colRef = collection(db, collectionName);
+  const mappedName = getMappedCollectionName(collectionName);
+  const colRef = collection(db, mappedName);
   return onSnapshot(colRef, (snapshot) => {
     const items: T[] = snapshot.docs.map(docSnap => ({
       id: docSnap.id,
@@ -171,13 +178,14 @@ export function subscribeCollection<T>(collectionName: string, callback: (data: 
     } as unknown as T));
     callback(items);
   }, (error) => {
-    console.error(`Error subscribing to ${collectionName}:`, error);
+    console.error(`Error subscribing to ${collectionName} (${mappedName}):`, error);
   });
 }
 
 // Single item CRUD
 export async function createItem<T extends object>(collectionName: string, itemData: T): Promise<string> {
-  const docRef = await addDoc(collection(db, collectionName), {
+  const mappedName = getMappedCollectionName(collectionName);
+  const docRef = await addDoc(collection(db, mappedName), {
     ...itemData,
     createdAt: new Date().toISOString()
   });
@@ -185,12 +193,14 @@ export async function createItem<T extends object>(collectionName: string, itemD
 }
 
 export async function updateItem<T extends object>(collectionName: string, id: string, updates: Partial<T>): Promise<void> {
-  const itemRef = doc(db, collectionName, id);
+  const mappedName = getMappedCollectionName(collectionName);
+  const itemRef = doc(db, mappedName, id);
   await updateDoc(itemRef, updates as any);
 }
 
 export async function deleteItem(collectionName: string, id: string): Promise<void> {
-  const itemRef = doc(db, collectionName, id);
+  const mappedName = getMappedCollectionName(collectionName);
+  const itemRef = doc(db, mappedName, id);
   await deleteDoc(itemRef);
 }
 

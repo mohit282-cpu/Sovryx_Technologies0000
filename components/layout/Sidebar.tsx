@@ -23,7 +23,8 @@ import {
   Inbox,
   User,
   LineChart,
-  DollarSign
+  DollarSign,
+  LogOut
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -31,6 +32,7 @@ interface SidebarProps {
   onSelectModule: (module: string) => void;
   isMobileOpen: boolean;
   setIsMobileOpen: (open: boolean) => void;
+  onSignOut?: () => void;
 }
 
 export const NAV_GROUPS = [
@@ -76,7 +78,8 @@ export default function Sidebar({
   currentModule,
   onSelectModule,
   isMobileOpen,
-  setIsMobileOpen
+  setIsMobileOpen,
+  onSignOut
 }: SidebarProps) {
   return (
     <>
@@ -159,8 +162,8 @@ export default function Sidebar({
           ))}
         </div>
 
-        {/* Bottom AI Status */}
-        <div className="p-4 border-t border-slate-800/80 bg-slate-950">
+        {/* Bottom AI Status & Sign Out */}
+        <div className="p-4 border-t border-slate-800/80 bg-slate-950 space-y-3">
           <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center gap-3">
             <Zap className="w-4 h-4 text-emerald-400 animate-pulse" />
             <div className="text-left">
@@ -168,6 +171,17 @@ export default function Sidebar({
               <p className="text-[10px] text-emerald-400 font-mono">Server Proxy Secured</p>
             </div>
           </div>
+
+          {onSignOut && (
+            <button
+              id="btn-sidebar-signout"
+              onClick={onSignOut}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-rose-400 hover:text-white hover:bg-rose-500/10 border border-rose-500/20 hover:border-rose-500/40 transition-all cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sign Out Session</span>
+            </button>
+          )}
         </div>
       </aside>
     </>

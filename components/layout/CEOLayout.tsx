@@ -150,97 +150,27 @@ export default function CEOLayout() {
     router.push(`/dashboard/${modId}`);
   };
 
-  const handleAdminLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoginError('');
-    let found = employees.find(emp => (emp.employeeId === loginEmpId || emp.email === loginEmpId));
-    if (!found) {
-      const staticFound = STATIC_DEFAULT_EMPLOYEES.find(emp => (emp.employeeId === loginEmpId || emp.email === loginEmpId));
-      if (staticFound) {
-        found = staticFound as Employee;
-      }
-    }
-    if (!found) {
-      setLoginError('Employee ID not found. Try EMP0001 or EMP0002.');
-      return;
-    }
-    // Secure bcrypt-based verification
-    if (found.password && !comparePassword(loginPass, found.password)) {
-      setLoginError('Incorrect password.');
-      return;
-    }
-    const role = found.role || 'Employee';
-    if (role === 'Employee') {
-      setLoginError('Access Denied: Employee role cannot access Admin Portal. Please use Employee Portal at /employee');
-      return;
-    }
-    const sessionData = { employeeId: found.employeeId, name: found.name, role, email: found.email };
-    setAdminUser(sessionData);
-    localStorage.setItem('sovryx_admin_session', JSON.stringify(sessionData));
-    document.cookie = `sovryx_admin_session=${JSON.stringify(sessionData)}; path=/; max-age=86400; SameSite=Lax`;
-    router.push('/dashboard');
+  const handleLogout = () => {
+    localStorage.removeItem('sovryx_admin_session');
+    document.cookie = 'sovryx_admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    router.replace('/login');
   };
 
-  if (!adminUser || adminUser.role === 'Employee') {
+  // Safe client-side mount state
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    if (!adminUser) {
+      router.replace('/login');
+    }
+    setTimeout(() => setMounted(true), 0);
+  }, [router, adminUser]);
+
+  if (!mounted || !adminUser) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-slate-100">
-        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600/20 text-indigo-400 mb-4 border border-indigo-500/30">
-              <ShieldAlert className="w-7 h-7" />
-            </div>
-            <h1 className="text-xl font-bold tracking-tight text-white">Sovryx Company OS</h1>
-            <p className="text-xs text-slate-400 mt-1">Admin & Executive Portal Login (/dashboard)</p>
-          </div>
-
-          {loginError && (
-            <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-400 text-center">
-              {loginError}
-            </div>
-          )}
-
-          <form onSubmit={handleAdminLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Employee ID (e.g. EMP0001)</label>
-              <input
-                type="text"
-                value={loginEmpId}
-                onChange={(e) => setLoginEmpId(e.target.value)}
-                placeholder="EMP0001"
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Password</label>
-              <input
-                type="password"
-                value={loginPass}
-                onChange={(e) => setLoginPass(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-indigo-600/20"
-            >
-              Sign In to Admin Portal
-            </button>
-          </form>
-
-          <div className="mt-6 pt-6 border-t border-slate-800 text-center space-y-3">
-            <p className="text-[11px] text-slate-400">Quick Test Credentials (Password: password123):</p>
-            <div className="flex flex-wrap gap-2 justify-center">
-              <button type="button" onClick={() => { setLoginEmpId('EMP0001'); setLoginPass('password123'); }} className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-[10px] text-indigo-300 font-mono">CEO: EMP0001</button>
-              <button type="button" onClick={() => { setLoginEmpId('EMP0002'); setLoginPass('password123'); }} className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-[10px] text-indigo-300 font-mono">Admin: EMP0002</button>
-              <button type="button" onClick={() => { setLoginEmpId('EMP0003'); setLoginPass('password123'); }} className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-[10px] text-indigo-300 font-mono">HR: EMP0003</button>
-            </div>
-            <div className="mt-4">
-              <Link href="/employee" className="text-xs text-indigo-400 hover:underline">Switch to Employee Portal →</Link>
-            </div>
-          </div>
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-slate-100 font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-xs text-slate-400 font-medium">Authenticating Admin Session...</p>
         </div>
       </div>
     );
@@ -373,6 +303,7 @@ export default function CEOLayout() {
         onSelectModule={handleModuleChange}
         isMobileOpen={isMobileOpen}
         setIsMobileOpen={setIsMobileOpen}
+        onSignOut={handleLogout}
       />
 
       {/* Main Container */}

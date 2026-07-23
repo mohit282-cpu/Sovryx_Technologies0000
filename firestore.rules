@@ -1,8 +1,159 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Global Safety Net - default deny
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
+    }
+
+    // Common global helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true || request.auth.token.email == 'mohitstha282@gmail.com';
+    }
+
+    function getUserData(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data;
+    }
+
+    function getUserRole(uid) {
+      return getUserData(uid).role;
+    }
+
+    function isStaff(uid) {
+      return getUserRole(uid) in ['CEO', 'Admin', 'HR', 'Manager'];
+    }
+
+    function isAdminOrCEO(uid) {
+      return getUserRole(uid) in ['CEO', 'Admin'];
+    }
+
+    // 1. Users Collection Rules
+    match /users/{userId} {
+      allow get: if isSignedIn() && (
+        userId == request.auth.uid || 
+        isStaff(request.auth.uid)
+      );
+
+      allow list: if (
+        isSignedIn() && (
+          userId == request.auth.uid || 
+          isStaff(request.auth.uid)
+        )
+      ) || (
+        !isSignedIn() && 
+        request.query.limit == 1 && 
+        resource.data.employeeId != null
+      );
+
+      allow create: if isSignedIn() && (
+        request.auth.uid == userId ||
+        request.auth.token.email == 'mohitstha282@gmail.com' ||
+        (isStaff(request.auth.uid) && (isAdminOrCEO(request.auth.uid) || getUserRole(request.auth.uid) == 'HR'))
+      );
+
+      allow update: if isSignedIn() && (
+        // Admin, CEO, or HR can update any user
+        (isAdminOrCEO(request.auth.uid) || getUserRole(request.auth.uid) == 'HR') ||
+        // Self-updates of limited profile fields
+        (userId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['profilePhoto', 'phone', 'address', 'password', 'forcePasswordChange', 'updatedAt', 'lastLogin']))
+      );
+
+      allow delete: if isSignedIn() && isAdminOrCEO(request.auth.uid);
+    }
+
+    // 2. Projects Collection Rules
+    match /projects/{projectId} {
+      allow read: if isSignedIn() && (
+        isStaff(request.auth.uid) ||
+        resource.data.employeeIds.hasAny([request.auth.uid])
+      );
+      allow write: if isSignedIn() && isStaff(request.auth.uid);
+    }
+
+    // 3. Tasks Collection Rules
+    match /tasks/{taskId} {
+      allow read: if isSignedIn() && (
+        isStaff(request.auth.uid) ||
+        resource.data.employeeId == request.auth.uid
+      );
+      allow write: if isSignedIn() && (
+        isStaff(request.auth.uid) ||
+        // Assigned employee can update task status/hours/completion only
+        (resource.data.employeeId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'actualHours', 'completionPercentage', 'subtasks', 'checklist', 'updatedAt']))
+      );
+    }
+
+    // 4. Attendance Collection Rules
+    match /attendance/{attendanceId} {
+      allow read: if isSignedIn() && (
+        isStaff(request.auth.uid) ||
+        resource.data.employeeId == request.auth.uid
+      );
+      allow write: if isSignedIn() && (
+        isStaff(request.auth.uid) ||
+        // Employee can clock in/out their own records
+        (request.resource.data.employeeId == request.auth.uid && (
+          resource == null || resource.data.employeeId == request.auth.uid
+        ))
+      );
+    }
+
+    // 5. Leave Requests Rules
+    match /leaveRequests/{requestId} {
+      allow read: if isSignedIn() && (
+        isStaff(request.auth.uid) ||
+        resource.data.employeeId == request.auth.uid
+      );
+      allow create: if isSignedIn() && request.resource.data.employeeId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        isStaff(request.auth.uid) ||
+        (resource.data.employeeId == request.auth.uid && resource.data.status == 'Pending' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['startDate', 'endDate', 'totalDays', 'reason', 'type', 'updatedAt']))
+      );
+      allow delete: if isSignedIn() && (
+        isStaff(request.auth.uid) ||
+        (resource.data.employeeId == request.auth.uid && resource.data.status == 'Pending')
+      );
+    }
+
+    // 6. Meetings Rules
+    match /meetings/{meetingId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && isStaff(request.auth.uid);
+    }
+
+    // 7. Clients Rules
+    match /clients/{clientId} {
+      allow read, write: if isSignedIn() && isStaff(request.auth.uid);
+    }
+
+    // 8. Documents Rules
+    match /documents/{docId} {
+      allow read: if isSignedIn() && (
+        isStaff(request.auth.uid) ||
+        resource.data.uploadedBy == request.auth.uid
+      );
+      allow write: if isSignedIn() && isStaff(request.auth.uid);
+    }
+
+    // 9. Notifications Rules
+    match /notifications/{notifId} {
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        resource.data.userId == 'all' ||
+        isStaff(request.auth.uid)
+      );
+      allow write: if isSignedIn() && isStaff(request.auth.uid);
+    }
+
+    // 10. Settings Rules
+    match /settings/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && isAdminOrCEO(request.auth.uid);
     }
   }
 }

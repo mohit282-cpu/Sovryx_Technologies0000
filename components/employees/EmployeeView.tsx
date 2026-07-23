@@ -28,6 +28,7 @@ import { callAI } from '@/lib/aiClient';
 import EmptyState from '@/components/ui/EmptyState';
 import NepaliDatePicker from '@/components/ui/NepaliDatePicker';
 import { adToBs, formatNPR } from '@/lib/nepaliCalendar';
+import AddEmployeeWizard from './AddEmployeeWizard';
 
 interface EmployeeViewProps {
   employees: Employee[];
@@ -579,116 +580,16 @@ export default function EmployeeView({ employees, onRefresh }: EmployeeViewProps
         </div>
       )}
 
-      {/* Add Employee Modal */}
+      {/* Add Employee Wizard (Multi-step flow) */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <UserPlus className="w-4 h-4 text-indigo-400" />
-                Add New Company Employee
-              </h3>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateEmployee} className="space-y-3 text-xs">
-              <div>
-                <label className="text-slate-300 block mb-1">Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Alex Mercer"
-                  value={newEmp.name}
-                  onChange={e => setNewEmp({ ...newEmp, name: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-slate-300 block mb-1">Email *</label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="alex@sovryx.com"
-                    value={newEmp.email}
-                    onChange={e => setNewEmp({ ...newEmp, email: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-300 block mb-1">Phone</label>
-                  <input
-                    type="text"
-                    placeholder="+1 (555) 123-4567"
-                    value={newEmp.phone}
-                    onChange={e => setNewEmp({ ...newEmp, phone: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-slate-300 block mb-1">Position *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Senior Software Engineer"
-                  value={newEmp.position}
-                  onChange={e => setNewEmp({ ...newEmp, position: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-slate-300 block mb-1">Joining Date (BS / AD)</label>
-                <NepaliDatePicker
-                  value={newEmp.joinDate}
-                  onChange={val => setNewEmp({ ...newEmp, joinDate: val })}
-                />
-              </div>
-
-              <div>
-                <label className="text-slate-300 block mb-1">Monthly Basic Salary (NPR)</label>
-                <input
-                  type="number"
-                  value={newEmp.salary}
-                  onChange={e => setNewEmp({ ...newEmp, salary: Number(e.target.value) })}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="text-slate-300 block mb-1">Skills (comma separated)</label>
-                <input
-                  type="text"
-                  placeholder="Python, LLMs, PyTorch"
-                  value={newEmp.skills}
-                  onChange={e => setNewEmp({ ...newEmp, skills: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div className="pt-3 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold"
-                >
-                  Save Employee
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <AddEmployeeWizard
+          existingEmployees={employees}
+          onClose={() => setShowAddModal(false)}
+          onSuccess={() => {
+            onRefresh();
+            setShowAddModal(false);
+          }}
+        />
       )}
     </div>
   );

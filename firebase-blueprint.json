@@ -1,5 +1,30 @@
 {
   "entities": {
+    "User": {
+      "title": "User",
+      "description": "User account and profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth unique identifier" },
+        "employeeId": { "type": "string", "description": "Unique Employee ID (e.g. EMP0001)" },
+        "fullName": { "type": "string", "description": "Full legal name of the user" },
+        "email": { "type": "string", "description": "Primary company email address" },
+        "phone": { "type": "string", "description": "Primary contact number" },
+        "profilePhoto": { "type": "string", "description": "URL or base64 of the profile photo" },
+        "role": { "type": "string", "enum": ["CEO", "Admin", "HR", "Manager", "Employee"] },
+        "department": { "type": "string", "description": "Assigned organizational department" },
+        "designation": { "type": "string", "description": "Job designation" },
+        "managerId": { "type": "string", "description": "UID of direct manager" },
+        "companyId": { "type": "string", "description": "ID of the company" },
+        "status": { "type": "string", "enum": ["Active", "On Leave", "Terminated", "Inactive", "Suspended"] },
+        "forcePasswordChange": { "type": "boolean", "description": "Flag to force password change on next login" },
+        "createdBy": { "type": "string", "description": "UID of the user who created this account" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Last updated timestamp" },
+        "lastLogin": { "type": "string", "description": "Last login timestamp" }
+      },
+      "required": ["uid", "employeeId", "fullName", "email", "role", "status", "forcePasswordChange"]
+    },
     "Employee": {
       "title": "Employee",
       "description": "Company personnel record",
@@ -106,6 +131,10 @@
     }
   },
   "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile records containing credentials, status, and role info"
+    },
     "/employees/{employeeId}": {
       "schema": "Employee",
       "description": "Personnel records collection"
