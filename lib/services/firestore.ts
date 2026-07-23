@@ -71,6 +71,14 @@ export async function seedInitialData() {
   return true;
 }
 
+export const STATIC_DEFAULT_EMPLOYEES: Partial<Employee>[] = [
+  { id: 'default-emp-0001', employeeId: 'EMP0001', name: 'Aarav Sharma', fullName: 'Aarav Sharma', role: 'CEO', password: 'password123', email: 'ceo@sovryx.com', department: 'Executive', status: 'Active', phone: '+977 9801112233', position: 'Chief Executive Officer', joinDate: '2024-01-01', skills: ['Strategy', 'Leadership', 'Management'], performanceScore: 98, attendanceScore: 100, warnings: [], documents: [], notes: [] },
+  { id: 'default-emp-0002', employeeId: 'EMP0002', name: 'Priya Adhikari', fullName: 'Priya Adhikari', role: 'Admin', password: 'password123', email: 'admin@sovryx.com', department: 'Operations', status: 'Active', phone: '+977 9802223344', position: 'Operations Director', joinDate: '2024-02-01', skills: ['Operations', 'Security', 'Governance'], performanceScore: 95, attendanceScore: 98, warnings: [], documents: [], notes: [] },
+  { id: 'default-emp-0003', employeeId: 'EMP0003', name: 'Rohan Karki', fullName: 'Rohan Karki', role: 'HR', password: 'password123', email: 'hr@sovryx.com', department: 'Human Resources', status: 'Active', phone: '+977 9803334455', position: 'HR Head', joinDate: '2024-03-01', skills: ['Recruitment', 'Payroll', 'Compliance'], performanceScore: 92, attendanceScore: 96, warnings: [], documents: [], notes: [] },
+  { id: 'default-emp-0004', employeeId: 'EMP0004', name: 'Sunil Thapa', fullName: 'Sunil Thapa', role: 'Manager', password: 'password123', email: 'manager@sovryx.com', department: 'Engineering', status: 'Active', phone: '+977 9804445566', position: 'Engineering Manager', joinDate: '2024-04-01', skills: ['Architecture', 'Agile', 'React'], performanceScore: 94, attendanceScore: 95, warnings: [], documents: [], notes: [] },
+  { id: 'default-emp-0005', employeeId: 'EMP0005', name: 'Sita Gurung', fullName: 'Sita Gurung', role: 'Employee', password: 'password123', email: 'employee@sovryx.com', department: 'Engineering', status: 'Active', phone: '+977 9805556677', position: 'Senior Full Stack Developer', joinDate: '2024-05-01', skills: ['TypeScript', 'Next.js', 'Tailwind'], performanceScore: 90, attendanceScore: 94, warnings: [], documents: [], notes: [] }
+];
+
 export async function ensureDefaultEmployees() {
   try {
     const colRef = collection(db, 'employees');

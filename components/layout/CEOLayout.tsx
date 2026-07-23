@@ -54,7 +54,8 @@ import {
   getSettings,
   DEFAULT_SETTINGS,
   seedInitialData,
-  ensureDefaultEmployees
+  ensureDefaultEmployees,
+  STATIC_DEFAULT_EMPLOYEES
 } from '@/lib/services/firestore';
 import Link from 'next/link';
 import { ShieldAlert } from 'lucide-react';
@@ -152,7 +153,13 @@ export default function CEOLayout() {
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
-    const found = employees.find(emp => (emp.employeeId === loginEmpId || emp.email === loginEmpId));
+    let found = employees.find(emp => (emp.employeeId === loginEmpId || emp.email === loginEmpId));
+    if (!found) {
+      const staticFound = STATIC_DEFAULT_EMPLOYEES.find(emp => (emp.employeeId === loginEmpId || emp.email === loginEmpId));
+      if (staticFound) {
+        found = staticFound as Employee;
+      }
+    }
     if (!found) {
       setLoginError('Employee ID not found. Try EMP0001 or EMP0002.');
       return;
