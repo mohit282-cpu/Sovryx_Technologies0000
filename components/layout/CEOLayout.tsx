@@ -58,9 +58,18 @@ import {
 } from '@/lib/services/firestore';
 import Link from 'next/link';
 import { ShieldAlert } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { comparePassword } from '@/lib/auth';
 
 export default function CEOLayout() {
-  const [currentModule, setCurrentModule] = useState<string>('dashboard');
+  const pathname = usePathname();
+  const router = useRouter();
+
+  // Derive currentModule directly from the pathname to avoid setState in effect
+  const currentModule = typeof window !== 'undefined' && pathname
+    ? (pathname.split('/').filter(Boolean)[1] || 'dashboard')
+    : 'dashboard';
+
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
@@ -70,9 +79,9 @@ export default function CEOLayout() {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('sovryx_admin_session');
       if (saved) return JSON.parse(saved);
-      return { employeeId: 'EMP0001', name: 'Aarav Sharma', role: 'CEO', email: 'ceo@sovryx.com' };
+      return null;
     }
-    return { employeeId: 'EMP0001', name: 'Aarav Sharma', role: 'CEO', email: 'ceo@sovryx.com' };
+    return null;
   });
 
   const [loginEmpId, setLoginEmpId] = useState('');
@@ -136,6 +145,10 @@ export default function CEOLayout() {
     };
   }, []);
 
+  const handleModuleChange = (modId: string) => {
+    router.push(`/dashboard/${modId}`);
+  };
+
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
@@ -144,7 +157,8 @@ export default function CEOLayout() {
       setLoginError('Employee ID not found. Try EMP0001 or EMP0002.');
       return;
     }
-    if (found.password && found.password !== loginPass && loginPass !== 'password123') {
+    // Secure bcrypt-based verification
+    if (found.password && !comparePassword(loginPass, found.password)) {
       setLoginError('Incorrect password.');
       return;
     }
@@ -156,6 +170,8 @@ export default function CEOLayout() {
     const sessionData = { employeeId: found.employeeId, name: found.name, role, email: found.email };
     setAdminUser(sessionData);
     localStorage.setItem('sovryx_admin_session', JSON.stringify(sessionData));
+    document.cookie = `sovryx_admin_session=${JSON.stringify(sessionData)}; path=/; max-age=86400; SameSite=Lax`;
+    router.push('/dashboard');
   };
 
   if (!adminUser || adminUser.role === 'Employee') {
@@ -242,7 +258,7 @@ export default function CEOLayout() {
             decisions={decisions}
             leaveRequests={leaveRequests}
             healthData={healthData}
-            onSelectModule={setCurrentModule}
+            onSelectModule={handleModuleChange}
             onOpenAIAssistant={() => setIsAIOpen(true)}
             onRefresh={refreshData}
           />
@@ -334,7 +350,7 @@ export default function CEOLayout() {
             decisions={decisions}
             leaveRequests={leaveRequests}
             healthData={healthData}
-            onSelectModule={setCurrentModule}
+            onSelectModule={handleModuleChange}
             onOpenAIAssistant={() => setIsAIOpen(true)}
             onRefresh={refreshData}
           />
@@ -347,7 +363,7 @@ export default function CEOLayout() {
       {/* Sidebar */}
       <Sidebar
         currentModule={currentModule}
-        onSelectModule={setCurrentModule}
+        onSelectModule={handleModuleChange}
         isMobileOpen={isMobileOpen}
         setIsMobileOpen={setIsMobileOpen}
       />
@@ -356,7 +372,7 @@ export default function CEOLayout() {
       <div className="flex-1 flex flex-col lg:pl-64 transition-all">
         <Header
           currentModule={currentModule}
-          onSelectModule={setCurrentModule}
+          onSelectModule={handleModuleChange}
           notifications={notifications}
           settings={settings}
           onOpenAIAssistant={() => setIsAIOpen(true)}

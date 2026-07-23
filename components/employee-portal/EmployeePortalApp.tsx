@@ -36,9 +36,18 @@ import {
 } from 'lucide-react';
 import { Employee, Task, AttendanceRecord, LeaveRequest, Project, Meeting, NotificationItem } from '@/types';
 import { subscribeCollection, updateItem, createItem, getSettings, DEFAULT_SETTINGS, ensureDefaultEmployees } from '@/lib/services/firestore';
+import { usePathname, useRouter } from 'next/navigation';
+import { comparePassword, hashPassword } from '@/lib/auth';
 
 export default function EmployeePortalApp() {
-  const [currentTab, setCurrentTab] = useState<string>('dashboard');
+  const pathname = usePathname();
+  const router = useRouter();
+  
+  // Derive currentTab directly from the pathname to avoid setState in effect
+  const currentTab = typeof window !== 'undefined' && pathname
+    ? (pathname.split('/').filter(Boolean)[1] || 'dashboard')
+    : 'dashboard';
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
   
@@ -47,9 +56,9 @@ export default function EmployeePortalApp() {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('sovryx_employee_session');
       if (saved) return JSON.parse(saved);
-      return { employeeId: 'EMP0005', name: 'Sita Gurung', role: 'Employee', email: 'employee@sovryx.com' };
+      return null;
     }
-    return { employeeId: 'EMP0005', name: 'Sita Gurung', role: 'Employee', email: 'employee@sovryx.com' };
+    return null;
   });
 
   const [loginEmpId, setLoginEmpId] = useState('');
@@ -119,19 +128,31 @@ export default function EmployeePortalApp() {
     };
   }, []);
 
-  // Check manual route redirect if someone enters /admin
+  // Synchronize route and handle redirects for a real separate page experience
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const path = window.location.pathname;
-      if (path.includes('/admin')) {
-        if (currentUser?.role === 'Employee') {
-          window.location.href = '/employee/dashboard';
+    if (typeof window !== 'undefined' && pathname) {
+      const segments = pathname.split('/').filter(Boolean);
+      if (segments[0] === 'employee') {
+        const subroute = segments[1] || '';
+        
+        if (!currentUser) {
+          // If not logged in, enforce redirecting to login screen URL
+          if (subroute !== 'login') {
+            router.replace('/employee/login');
+          }
         } else {
-          window.location.href = '/';
+          // If logged in
+          if (subroute === 'login' || subroute === '') {
+            router.replace('/employee/dashboard');
+          }
         }
       }
     }
-  }, [currentUser?.role]);
+  }, [pathname, currentUser, router]);
+
+  const handleTabChange = (tabId: string) => {
+    router.push(`/employee/${tabId}`);
+  };
 
   const handleEmployeeLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,7 +162,8 @@ export default function EmployeePortalApp() {
       setLoginError('Employee ID not found. Try EMP0005.');
       return;
     }
-    if (found.password && found.password !== loginPass && loginPass !== 'password123') {
+    // Secure bcrypt verification
+    if (found.password && !comparePassword(loginPass, found.password)) {
       setLoginError('Incorrect password.');
       return;
     }
@@ -149,6 +171,8 @@ export default function EmployeePortalApp() {
     setCurrentUser(sessionData);
     setSelectedEmpId(found.id);
     localStorage.setItem('sovryx_employee_session', JSON.stringify(sessionData));
+    document.cookie = `sovryx_employee_session=${JSON.stringify(sessionData)}; path=/; max-age=86400; SameSite=Lax`;
+    router.replace('/employee/dashboard');
   };
 
   if (!currentUser) {
@@ -311,13 +335,22 @@ export default function EmployeePortalApp() {
     }
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentPass || !newPass) return;
-    setPassMsg(true);
-    setCurrentPass('');
-    setNewPass('');
-    setTimeout(() => setPassMsg(false), 4000);
+    if (!comparePassword(currentPass, currentEmployee.password)) {
+      alert('Current password incorrect!');
+      return;
+    }
+    try {
+      await updateItem('employees', currentEmployee.id, { password: hashPassword(newPass) });
+      setPassMsg(true);
+      setCurrentPass('');
+      setNewPass('');
+      setTimeout(() => setPassMsg(false), 4000);
+    } catch (err: any) {
+      alert('Error changing password: ' + err.message);
+    }
   };
 
   const handleSendTicket = (e: React.FormEvent) => {
@@ -372,7 +405,7 @@ export default function EmployeePortalApp() {
             return (
               <button
                 key={item.id}
-                onClick={() => setCurrentTab(item.id)}
+                onClick={() => handleTabChange(item.id)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
                   active
                     ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
@@ -403,7 +436,11 @@ export default function EmployeePortalApp() {
             {sidebarOpen && <span>Switch to Admin</span>}
           </a>
           <button
-            onClick={() => { setCurrentUser(null); localStorage.removeItem('sovryx_employee_session'); }}
+            onClick={() => {
+              setCurrentUser(null);
+              localStorage.removeItem('sovryx_employee_session');
+              document.cookie = 'sovryx_employee_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
+            }}
             className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-900/50 rounded-xl text-xs font-bold transition-colors"
           >
             <LogOut className="w-3.5 h-3.5" />
@@ -544,7 +581,7 @@ export default function EmployeePortalApp() {
                         </div>
                       </div>
                       <button
-                        onClick={() => setCurrentTab('leave')}
+                        onClick={() => handleTabChange('leave')}
                         className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-bold text-xs transition-colors"
                       >
                         Request Time Off →
@@ -569,7 +606,7 @@ export default function EmployeePortalApp() {
                         )}
                       </div>
                       <button
-                        onClick={() => setCurrentTab('projects')}
+                        onClick={() => handleTabChange('projects')}
                         className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-bold text-xs transition-colors"
                       >
                         View Projects →
@@ -583,7 +620,7 @@ export default function EmployeePortalApp() {
                       <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
                         <CheckSquare className="w-4 h-4 text-indigo-400" /> My Assigned Tasks ({empTasks.length})
                       </h3>
-                      <button onClick={() => setCurrentTab('tasks')} className="text-xs text-indigo-400 hover:underline">View All</button>
+                      <button onClick={() => handleTabChange('tasks')} className="text-xs text-indigo-400 hover:underline">View All</button>
                     </div>
                     <div className="space-y-2">
                       {empTasks.length === 0 ? (

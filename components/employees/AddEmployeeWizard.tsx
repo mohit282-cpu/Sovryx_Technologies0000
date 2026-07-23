@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { Employee } from '@/types';
 import { createItem } from '@/lib/services/firestore';
+import { hashPassword } from '@/lib/auth';
 import NepaliDatePicker from '@/components/ui/NepaliDatePicker';
 import { adToBs, formatNPR } from '@/lib/nepaliCalendar';
 
@@ -448,6 +449,7 @@ export default function AddEmployeeWizard({
         department: formData.department,
         salary: Number(formData.basicSalaryNPR) + Number(formData.allowancesNPR),
         joinDate: formData.joinDateAD,
+        password: hashPassword(formData.tempPassword || 'password123'),
         status: formData.employmentStatus,
         skills: formData.skillTags,
         performanceScore: 88,

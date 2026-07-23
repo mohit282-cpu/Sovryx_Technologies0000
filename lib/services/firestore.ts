@@ -14,6 +14,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { hashPassword } from '../auth';
 import {
   Employee,
   Project,
@@ -75,12 +76,13 @@ export async function ensureDefaultEmployees() {
     const colRef = collection(db, 'employees');
     const snap = await getDocs(colRef);
     if (snap.empty) {
+      const defaultPasswordHash = hashPassword('password123');
       const defaults = [
-        { employeeId: 'EMP0001', name: 'Aarav Sharma', fullName: 'Aarav Sharma', role: 'CEO', password: 'password123', department: 'Executive', position: 'Chief Executive Officer', email: 'ceo@sovryx.com', phone: '+977 9801112233', status: 'Active', salary: 350000, joinDate: '2024-01-01', skills: ['Strategy', 'Leadership', 'Management'], performanceScore: 98, attendanceScore: 100, warnings: [], documents: [], notes: [] },
-        { employeeId: 'EMP0002', name: 'Priya Adhikari', fullName: 'Priya Adhikari', role: 'Admin', password: 'password123', department: 'Operations', position: 'Operations Director', email: 'admin@sovryx.com', phone: '+977 9802223344', status: 'Active', salary: 250000, joinDate: '2024-02-01', skills: ['Operations', 'Security', 'Governance'], performanceScore: 95, attendanceScore: 98, warnings: [], documents: [], notes: [] },
-        { employeeId: 'EMP0003', name: 'Rohan Karki', fullName: 'Rohan Karki', role: 'HR', password: 'password123', department: 'Human Resources', position: 'HR Head', email: 'hr@sovryx.com', phone: '+977 9803334455', status: 'Active', salary: 200000, joinDate: '2024-03-01', skills: ['Recruitment', 'Payroll', 'Compliance'], performanceScore: 92, attendanceScore: 96, warnings: [], documents: [], notes: [] },
-        { employeeId: 'EMP0004', name: 'Sunil Thapa', fullName: 'Sunil Thapa', role: 'Manager', password: 'password123', department: 'Engineering', position: 'Engineering Manager', email: 'manager@sovryx.com', phone: '+977 9804445566', status: 'Active', salary: 220000, joinDate: '2024-04-01', skills: ['Architecture', 'Agile', 'React'], performanceScore: 94, attendanceScore: 95, warnings: [], documents: [], notes: [] },
-        { employeeId: 'EMP0005', name: 'Sita Gurung', fullName: 'Sita Gurung', role: 'Employee', password: 'password123', department: 'Engineering', position: 'Senior Full Stack Developer', email: 'employee@sovryx.com', phone: '+977 9805556677', status: 'Active', salary: 150000, joinDate: '2024-05-01', skills: ['TypeScript', 'Next.js', 'Tailwind'], performanceScore: 90, attendanceScore: 94, warnings: [], documents: [], notes: [] }
+        { employeeId: 'EMP0001', name: 'Aarav Sharma', fullName: 'Aarav Sharma', role: 'CEO', password: defaultPasswordHash, department: 'Executive', position: 'Chief Executive Officer', email: 'ceo@sovryx.com', phone: '+977 9801112233', status: 'Active', salary: 350000, joinDate: '2024-01-01', skills: ['Strategy', 'Leadership', 'Management'], performanceScore: 98, attendanceScore: 100, warnings: [], documents: [], notes: [] },
+        { employeeId: 'EMP0002', name: 'Priya Adhikari', fullName: 'Priya Adhikari', role: 'Admin', password: defaultPasswordHash, department: 'Operations', position: 'Operations Director', email: 'admin@sovryx.com', phone: '+977 9802223344', status: 'Active', salary: 250000, joinDate: '2024-02-01', skills: ['Operations', 'Security', 'Governance'], performanceScore: 95, attendanceScore: 98, warnings: [], documents: [], notes: [] },
+        { employeeId: 'EMP0003', name: 'Rohan Karki', fullName: 'Rohan Karki', role: 'HR', password: defaultPasswordHash, department: 'Human Resources', position: 'HR Head', email: 'hr@sovryx.com', phone: '+977 9803334455', status: 'Active', salary: 200000, joinDate: '2024-03-01', skills: ['Recruitment', 'Payroll', 'Compliance'], performanceScore: 92, attendanceScore: 96, warnings: [], documents: [], notes: [] },
+        { employeeId: 'EMP0004', name: 'Sunil Thapa', fullName: 'Sunil Thapa', role: 'Manager', password: defaultPasswordHash, department: 'Engineering', position: 'Engineering Manager', email: 'manager@sovryx.com', phone: '+977 9804445566', status: 'Active', salary: 220000, joinDate: '2024-04-01', skills: ['Architecture', 'Agile', 'React'], performanceScore: 94, attendanceScore: 95, warnings: [], documents: [], notes: [] },
+        { employeeId: 'EMP0005', name: 'Sita Gurung', fullName: 'Sita Gurung', role: 'Employee', password: defaultPasswordHash, department: 'Engineering', position: 'Senior Full Stack Developer', email: 'employee@sovryx.com', phone: '+977 9805556677', status: 'Active', salary: 150000, joinDate: '2024-05-01', skills: ['TypeScript', 'Next.js', 'Tailwind'], performanceScore: 90, attendanceScore: 94, warnings: [], documents: [], notes: [] }
       ];
       for (const emp of defaults) {
         await addDoc(colRef, emp);
