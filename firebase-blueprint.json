@@ -1,0 +1,134 @@
+{
+  "entities": {
+    "Employee": {
+      "title": "Employee",
+      "description": "Company personnel record",
+      "type": "object",
+      "properties": {
+        "employeeId": { "type": "string", "description": "Unique human-readable employee code" },
+        "name": { "type": "string", "description": "Full name of the employee" },
+        "email": { "type": "string", "description": "Official company email address" },
+        "phone": { "type": "string", "description": "Primary phone number" },
+        "position": { "type": "string", "description": "Current engineering/admin role" },
+        "department": { "type": "string", "description": "Organizational department" },
+        "salary": { "type": "number", "description": "Monthly basic salary in NPR" },
+        "joinDate": { "type": "string", "description": "Join date in YYYY-MM-DD" },
+        "status": { "type": "string", "enum": ["Active", "On Leave", "Terminated", "Inactive", "Resigned", "Probation"] }
+      },
+      "required": ["employeeId", "name", "email", "position", "department", "salary", "joinDate", "status"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "Active business deliverable",
+      "type": "object",
+      "properties": {
+        "projectId": { "type": "string", "description": "Unique project identifier" },
+        "name": { "type": "string", "description": "Name of the project" },
+        "client": { "type": "string", "description": "Client company name" },
+        "budget": { "type": "number", "description": "Project budget in NPR" },
+        "spentBudget": { "type": "number", "description": "Amount spent from budget" },
+        "status": { "type": "string", "enum": ["Planning", "In Progress", "On Hold", "Completed", "At Risk"] },
+        "deadline": { "type": "string", "description": "Target delivery date" },
+        "startDate": { "type": "string", "description": "Project launch date" },
+        "progress": { "type": "number", "description": "Milestone progress percentage (0-100)" },
+        "riskLevel": { "type": "string", "enum": ["Low", "Medium", "High", "Critical"] },
+        "employeeIds": { "type": "array", "description": "List of assigned employee IDs" }
+      },
+      "required": ["projectId", "name", "client", "budget", "status", "deadline", "startDate", "progress"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "Specific action item under a project",
+      "type": "object",
+      "properties": {
+        "taskId": { "type": "string", "description": "Human-readable task identifier" },
+        "title": { "type": "string", "description": "Summary of the task" },
+        "description": { "type": "string", "description": "Detailed task instructions" },
+        "employeeId": { "type": "string", "description": "ID of assigned developer" },
+        "employeeName": { "type": "string" },
+        "projectId": { "type": "string", "description": "ID of associated project" },
+        "projectName": { "type": "string" },
+        "priority": { "type": "string", "enum": ["Low", "Medium", "High", "Urgent"] },
+        "difficulty": { "type": "string", "enum": ["Easy", "Medium", "Hard", "Expert"] },
+        "deadline": { "type": "string", "description": "Target completion date" },
+        "status": { "type": "string", "enum": ["Todo", "In Progress", "Review", "Completed"] },
+        "estimatedHours": { "type": "number" },
+        "actualHours": { "type": "number" },
+        "completionPercentage": { "type": "number" }
+      },
+      "required": ["taskId", "title", "projectId", "priority", "deadline", "status"]
+    },
+    "TimeLog": {
+      "title": "TimeLog",
+      "description": "Logged work hours record",
+      "type": "object",
+      "properties": {
+        "projectId": { "type": "string" },
+        "projectName": { "type": "string" },
+        "taskId": { "type": "string" },
+        "taskTitle": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "employeeName": { "type": "string" },
+        "hours": { "type": "number" },
+        "date": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "required": ["projectId", "employeeId", "hours", "date", "description"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "Project financial cost entry",
+      "type": "object",
+      "properties": {
+        "projectId": { "type": "string" },
+        "projectName": { "type": "string" },
+        "amount": { "type": "number" },
+        "category": { "type": "string", "enum": ["Cloud Services", "Software License", "Hardware Device", "Team Benefit", "External Consulting", "Other Overhead"] },
+        "description": { "type": "string" },
+        "date": { "type": "string" }
+      },
+      "required": ["projectId", "amount", "category", "description", "date"]
+    },
+    "Attachment": {
+      "title": "Attachment",
+      "description": "Secure file artifact registered in project vault",
+      "type": "object",
+      "properties": {
+        "projectId": { "type": "string" },
+        "projectName": { "type": "string" },
+        "fileName": { "type": "string" },
+        "fileSize": { "type": "string" },
+        "category": { "type": "string" },
+        "uploadedBy": { "type": "string" },
+        "date": { "type": "string" }
+      },
+      "required": ["projectId", "fileName", "category", "date"]
+    }
+  },
+  "firestore": {
+    "/employees/{employeeId}": {
+      "schema": "Employee",
+      "description": "Personnel records collection"
+    },
+    "/projects/{projectId}": {
+      "schema": "Project",
+      "description": "Active business deliverables collection"
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Project-specific deliverables"
+    },
+    "/timeLogs/{logId}": {
+      "schema": "TimeLog",
+      "description": "Engineering work hours logs"
+    },
+    "/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "NPR accounting expenses ledgers"
+    },
+    "/projectAttachments/{attachmentId}": {
+      "schema": "Attachment",
+      "description": "Simulated secure document metadata"
+    }
+  }
+}

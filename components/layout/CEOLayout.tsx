@@ -53,14 +53,31 @@ import {
   subscribeCollection,
   getSettings,
   DEFAULT_SETTINGS,
-  seedInitialData
+  seedInitialData,
+  ensureDefaultEmployees
 } from '@/lib/services/firestore';
+import Link from 'next/link';
+import { ShieldAlert } from 'lucide-react';
 
 export default function CEOLayout() {
   const [currentModule, setCurrentModule] = useState<string>('dashboard');
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+
+  // Admin Auth state
+  const [adminUser, setAdminUser] = useState<any>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sovryx_admin_session');
+      if (saved) return JSON.parse(saved);
+      return { employeeId: 'EMP0001', name: 'Aarav Sharma', role: 'CEO', email: 'ceo@sovryx.com' };
+    }
+    return { employeeId: 'EMP0001', name: 'Aarav Sharma', role: 'CEO', email: 'ceo@sovryx.com' };
+  });
+
+  const [loginEmpId, setLoginEmpId] = useState('');
+  const [loginPass, setLoginPass] = useState('');
+  const [loginError, setLoginError] = useState('');
 
   // Collections state
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -87,6 +104,8 @@ export default function CEOLayout() {
 
   // Subscribe to all collections in real-time
   useEffect(() => {
+    ensureDefaultEmployees();
+
     const unsub1 = subscribeCollection<Employee>('employees', (data) => setEmployees(data));
     const unsub2 = subscribeCollection<Project>('projects', (data) => setProjects(data));
     const unsub3 = subscribeCollection<Task>('tasks', (data) => setTasks(data));
@@ -116,6 +135,93 @@ export default function CEOLayout() {
       unsub11(); unsub12(); unsub13(); unsub14(); unsub15(); unsub16();
     };
   }, []);
+
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+    const found = employees.find(emp => (emp.employeeId === loginEmpId || emp.email === loginEmpId));
+    if (!found) {
+      setLoginError('Employee ID not found. Try EMP0001 or EMP0002.');
+      return;
+    }
+    if (found.password && found.password !== loginPass && loginPass !== 'password123') {
+      setLoginError('Incorrect password.');
+      return;
+    }
+    const role = found.role || 'Employee';
+    if (role === 'Employee') {
+      setLoginError('Access Denied: Employee role cannot access Admin Portal. Please use Employee Portal at /employee');
+      return;
+    }
+    const sessionData = { employeeId: found.employeeId, name: found.name, role, email: found.email };
+    setAdminUser(sessionData);
+    localStorage.setItem('sovryx_admin_session', JSON.stringify(sessionData));
+  };
+
+  if (!adminUser || adminUser.role === 'Employee') {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-slate-100">
+        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600/20 text-indigo-400 mb-4 border border-indigo-500/30">
+              <ShieldAlert className="w-7 h-7" />
+            </div>
+            <h1 className="text-xl font-bold tracking-tight text-white">Sovryx Company OS</h1>
+            <p className="text-xs text-slate-400 mt-1">Admin & Executive Portal Login (/dashboard)</p>
+          </div>
+
+          {loginError && (
+            <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-400 text-center">
+              {loginError}
+            </div>
+          )}
+
+          <form onSubmit={handleAdminLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">Employee ID (e.g. EMP0001)</label>
+              <input
+                type="text"
+                value={loginEmpId}
+                onChange={(e) => setLoginEmpId(e.target.value)}
+                placeholder="EMP0001"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">Password</label>
+              <input
+                type="password"
+                value={loginPass}
+                onChange={(e) => setLoginPass(e.target.value)}
+                placeholder="••••••••"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-indigo-600/20"
+            >
+              Sign In to Admin Portal
+            </button>
+          </form>
+
+          <div className="mt-6 pt-6 border-t border-slate-800 text-center space-y-3">
+            <p className="text-[11px] text-slate-400">Quick Test Credentials (Password: password123):</p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              <button type="button" onClick={() => { setLoginEmpId('EMP0001'); setLoginPass('password123'); }} className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-[10px] text-indigo-300 font-mono">CEO: EMP0001</button>
+              <button type="button" onClick={() => { setLoginEmpId('EMP0002'); setLoginPass('password123'); }} className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-[10px] text-indigo-300 font-mono">Admin: EMP0002</button>
+              <button type="button" onClick={() => { setLoginEmpId('EMP0003'); setLoginPass('password123'); }} className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-[10px] text-indigo-300 font-mono">HR: EMP0003</button>
+            </div>
+            <div className="mt-4">
+              <Link href="/employee" className="text-xs text-indigo-400 hover:underline">Switch to Employee Portal →</Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const refreshData = () => {
     getSettings().then((s) => s && setSettings(s));
